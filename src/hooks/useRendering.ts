@@ -222,6 +222,7 @@ const useRendering = (
     });
   };
 
+  // when gizmo target changed
   useEffect(() => {
     if (gizmoManger && currentGizmoTarget) {
       // attach gizmo
@@ -279,7 +280,7 @@ const useRendering = (
   useEffect(() => {
     if (gizmoManger) {
       const handleKeyDown = (event: KeyboardEvent) => {
-        console.log(event.key);
+        // console.log(event.key);
         switch (event.key) {
           // case "q":
           // case "Q":
