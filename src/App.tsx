@@ -26,6 +26,7 @@ function App() {
 
   setTimeout(() => {
     setIsPlaying(true);
+    setIsSplited(true);
   }, 10000);
 
   // redux로 가지고 있어야 하는 전역 데이터
