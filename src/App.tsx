@@ -5,7 +5,11 @@ import { useRendering } from "./hooks";
 
 function App() {
   const [currentFile, setCurrentFile] = useState<File | null>(null);
-  const renderingCanvas = useRef<HTMLCanvasElement>(null);
+  const [isSplited, setIsSplited] = useState<boolean>(true);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+
+  const renderingCanvas1 = useRef<HTMLCanvasElement>(null);
+  const renderingCanvas2 = useRef<HTMLCanvasElement>(null);
 
   const handleDrop = (files: File[]) => {
     if (files.length > 1) {
@@ -20,11 +24,31 @@ function App() {
     onDrop: handleDrop,
   });
 
-  useRendering(currentFile, renderingCanvas);
+  setTimeout(() => {
+    setIsPlaying(true);
+  }, 10000);
+
+  // redux로 가지고 있어야 하는 전역 데이터
+  // canvas 외의 것들을 redux로 관리할 듯
+  useRendering(currentFile, renderingCanvas1, isPlaying);
+  useRendering(currentFile, renderingCanvas2, isPlaying);
 
   return (
-    <Container {...getRootProps()}>
-      <canvas id="renderingCanvas" ref={renderingCanvas}></canvas>
+    <Container {...getRootProps()} isSplited={isSplited}>
+      <div className="canvas-wrapper">
+        <canvas
+          id="renderingCanvas1"
+          ref={renderingCanvas1}
+          className="renderingCanvas"
+        ></canvas>
+        {isSplited && (
+          <canvas
+            id="renderingCanvas2"
+            ref={renderingCanvas2}
+            className="renderingCanvas"
+          ></canvas>
+        )}
+      </div>
       <div className="editing-div">
         <div className="over-height-placeholder"></div>
       </div>
@@ -32,17 +56,27 @@ function App() {
   );
 }
 
-const Container = styled.div`
+interface ContainerProps {
+  isSplited: boolean;
+}
+
+const Container = styled.div<ContainerProps>`
   min-width: 1000px;
   width: 100vw;
   height: 100vh;
   display: grid;
   grid-template-columns: 1fr 500px;
 
-  #renderingCanvas {
-    height: 100%;
+  .canvas-wrapper {
     width: 100%;
-    border: 1px solid black;
+    display: flex;
+    justify-content: center;
+
+    .renderingCanvas {
+      height: 100%;
+      width: ${(props) => (props.isSplited ? "50%" : "100%")};
+      border: 1px solid black;
+    }
   }
 
   .editing-div {

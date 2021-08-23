@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useState } from "react";
+import { RefObject, useCallback, useEffect, useState } from "react";
 import * as BABYLON from "@babylonjs/core";
 import "@babylonjs/loaders/glTF";
 import { convertFbxToGlb, getFileExtension } from "../utils";
@@ -20,7 +20,8 @@ const SKELETON_VIEWER_OPTION = {
 
 const useRendering = (
   currentFile: File | null,
-  renderingCanvas: RefObject<HTMLCanvasElement>
+  renderingCanvas: RefObject<HTMLCanvasElement>,
+  isPlaying: boolean
 ) => {
   const [scene, setScene] = useState<BABYLON.Scene | null>(null);
   const [gizmoManger, setGizmoManager] = useState<BABYLON.GizmoManager | null>(
@@ -29,11 +30,31 @@ const useRendering = (
   const [currentGizmoTarget, setCurrentGizmoTarget] = useState<
     BABYLON.TransformNode | BABYLON.Mesh | null
   >(null);
+  const [
+    currentAnimatioGroup,
+    setCurrentAniamtionGroup,
+  ] = useState<BABYLON.AnimationGroup | null>(null);
+
+  useEffect(() => {
+    if (currentAnimatioGroup) {
+      if (isPlaying) {
+        currentAnimatioGroup.play();
+      } else {
+        currentAnimatioGroup.pause();
+      }
+    }
+  }, [currentAnimatioGroup, isPlaying]);
 
   // initial setting
   useEffect(() => {
     const handleSceneReady = (scene: BABYLON.Scene) => {
       if (renderingCanvas.current) {
+        if (renderingCanvas.current.id === "renderingCanvas1") {
+          BABYLON.Mesh.CreateGround("ground", 5, 5, 5, scene);
+        } else if (renderingCanvas.current.id === "renderingCanvas2") {
+          scene.forceWireframe = true;
+        }
+
         // create arcRotate camera
         const arcRotateCamera = new BABYLON.ArcRotateCamera(
           "arcRotateCamera",
@@ -120,107 +141,118 @@ const useRendering = (
     }
   }, [renderingCanvas]);
 
-  const addAssetsToScene = (
-    assetContainer: BABYLON.AssetContainer,
-    scene: BABYLON.Scene
-  ) => {
-    const {
-      animationGroups,
-      geometries,
-      materials,
-      meshes,
-      textures,
-      skeletons,
-      transformNodes,
-    } = assetContainer;
+  const addAssetsToScene = useCallback(
+    (assetContainer: BABYLON.AssetContainer, scene: BABYLON.Scene) => {
+      const {
+        animationGroups,
+        geometries,
+        materials,
+        meshes,
+        textures,
+        skeletons,
+        transformNodes,
+      } = assetContainer;
 
-    // primary data : animationGroups, meshes, skeletons, transformNodes
-    if (animationGroups.length !== 0) {
-      animationGroups.forEach((animationGroup) => {
-        animationGroup.pause();
-        scene.addAnimationGroup(animationGroup);
+      // primary data : animationGroups, meshes, skeletons, transformNodes
+      if (animationGroups.length !== 0) {
+        setCurrentAniamtionGroup(animationGroups[0]);
+
+        animationGroups.forEach((animationGroup) => {
+          animationGroup.pause();
+          scene.addAnimationGroup(animationGroup);
+        });
+      }
+
+      if (meshes.length !== 0) {
+        meshes.forEach((mesh) => {
+          if (
+            renderingCanvas.current &&
+            renderingCanvas.current.id === "renderingCanvas2"
+          ) {
+            mesh.material = new BABYLON.StandardMaterial(
+              "standardMaterial",
+              scene
+            );
+          }
+          mesh.isPickable = false;
+          scene.addMesh(mesh);
+        });
+      }
+
+      if (skeletons.length !== 0) {
+        skeletons.forEach((skeleton) => {
+          scene.addSkeleton(skeleton);
+        });
+
+        // add skeleton viewer
+        const skeletonViewer = new BABYLON.SkeletonViewer(
+          skeletons[0],
+          meshes[0],
+          scene,
+          true,
+          meshes[0].renderingGroupId + 1,
+          SKELETON_VIEWER_OPTION
+        );
+        skeletonViewer.isEnabled = true; // should set initially because of the babylon bug
+
+        // add joint spheres
+        skeletons[0].bones.forEach((bone, idx) => {
+          if (!bone.name.toLowerCase().includes("scene")) {
+            const jointSphere = BABYLON.MeshBuilder.CreateSphere(
+              "jointSphere",
+              { diameter: 3 },
+              scene
+            );
+            jointSphere.renderingGroupId = 3;
+            jointSphere.attachToBone(bone, meshes[0]);
+
+            // manage joint sphere actions
+            jointSphere.actionManager = new BABYLON.ActionManager(scene);
+            jointSphere.actionManager.registerAction(
+              new BABYLON.ExecuteCodeAction(
+                BABYLON.ActionManager.OnPickDownTrigger,
+                (event) => {
+                  setCurrentGizmoTarget(bone.getTransformNode());
+                }
+              )
+            );
+            jointSphere.actionManager.registerAction(
+              new BABYLON.ExecuteCodeAction(
+                BABYLON.ActionManager.OnPointerOverTrigger,
+                () => {
+                  scene.hoverCursor = "pointer";
+                }
+              )
+            );
+            jointSphere.actionManager.registerAction(
+              new BABYLON.ExecuteCodeAction(
+                BABYLON.ActionManager.OnPointerOutTrigger,
+                () => {
+                  scene.hoverCursor = "default";
+                }
+              )
+            );
+          }
+        });
+      }
+
+      transformNodes.forEach((transformNode) => {
+        scene.addTransformNode(transformNode);
       });
-    }
 
-    if (meshes.length !== 0) {
-      meshes.forEach((mesh) => {
-        mesh.isPickable = false;
-        scene.addMesh(mesh);
+      // secondary data : geometries, materials, textures
+      geometries.forEach((geometry) => {
+        scene.addGeometry(geometry);
       });
-    }
-
-    if (skeletons.length !== 0) {
-      skeletons.forEach((skeleton) => {
-        scene.addSkeleton(skeleton);
+      materials.forEach((material) => {
+        scene.addMaterial(material);
       });
-
-      // add skeleton viewer
-      const skeletonViewer = new BABYLON.SkeletonViewer(
-        skeletons[0],
-        meshes[0],
-        scene,
-        true,
-        meshes[0].renderingGroupId + 1,
-        SKELETON_VIEWER_OPTION
-      );
-      skeletonViewer.isEnabled = true; // should set initially because of the babylon bug
-
-      // add joint spheres
-      skeletons[0].bones.forEach((bone, idx) => {
-        if (!bone.name.toLowerCase().includes("scene")) {
-          const jointSphere = BABYLON.MeshBuilder.CreateSphere(
-            "jointSphere",
-            { diameter: 3 },
-            scene
-          );
-          jointSphere.renderingGroupId = 3;
-          jointSphere.attachToBone(bone, meshes[0]);
-
-          // manage joint sphere actions
-          jointSphere.actionManager = new BABYLON.ActionManager(scene);
-          jointSphere.actionManager.registerAction(
-            new BABYLON.ExecuteCodeAction(
-              BABYLON.ActionManager.OnPickDownTrigger,
-              (event) => {
-                setCurrentGizmoTarget(bone.getTransformNode());
-              }
-            )
-          );
-          jointSphere.actionManager.registerAction(
-            new BABYLON.ExecuteCodeAction(
-              BABYLON.ActionManager.OnPointerOverTrigger,
-              () => {
-                scene.hoverCursor = "pointer";
-              }
-            )
-          );
-          jointSphere.actionManager.registerAction(
-            new BABYLON.ExecuteCodeAction(
-              BABYLON.ActionManager.OnPointerOutTrigger,
-              () => {
-                scene.hoverCursor = "default";
-              }
-            )
-          );
-        }
+      textures.forEach((texture) => {
+        scene.addTexture(texture);
       });
-    }
-
-    transformNodes.forEach((transformNode) => {
-      scene.addTransformNode(transformNode);
-    });
-
-    // secondary data : geometries, materials, textures
-    geometries.forEach((geometry) => {
-      scene.addGeometry(geometry);
-    });
-    materials.forEach((material) => {
-      scene.addMaterial(material);
-    });
-    textures.forEach((texture) => {
-      scene.addTexture(texture);
-    });
-  };
+    },
+    [renderingCanvas]
+  );
 
   // when gizmo target changed
   useEffect(() => {
@@ -274,7 +306,7 @@ const useRendering = (
         }
       }
     }
-  }, [currentFile, scene]);
+  }, [addAssetsToScene, currentFile, scene]);
 
   // manage gizmo shortcut
   useEffect(() => {
@@ -339,6 +371,8 @@ const useRendering = (
       };
     }
   }, [gizmoManger]);
+
+  return {};
 };
 
 export default useRendering;
