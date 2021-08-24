@@ -1,7 +1,11 @@
 import { RefObject, useCallback, useEffect, useState } from "react";
 import * as BABYLON from "@babylonjs/core";
 import "@babylonjs/loaders/glTF";
+import { useDispatch } from "react-redux";
+import { v4 as uuidv4 } from "uuid";
 import { convertFbxToGlb, getFileExtension } from "../utils";
+import { loadModelAssets } from "../actions/modelAssets";
+import { useSelector } from "../reducers";
 
 const SKELETON_VIEWER_OPTION = {
   pauseAnimations: false,
@@ -20,8 +24,7 @@ const SKELETON_VIEWER_OPTION = {
 
 const useRendering = (
   currentFile: File | null,
-  renderingCanvas: RefObject<HTMLCanvasElement>,
-  isPlaying: boolean
+  renderingCanvas: RefObject<HTMLCanvasElement>
 ) => {
   const [scene, setScene] = useState<BABYLON.Scene | null>(null);
   const [gizmoManger, setGizmoManager] = useState<BABYLON.GizmoManager | null>(
@@ -30,20 +33,13 @@ const useRendering = (
   const [currentGizmoTarget, setCurrentGizmoTarget] = useState<
     BABYLON.TransformNode | BABYLON.Mesh | null
   >(null);
-  const [
-    currentAnimatioGroup,
-    setCurrentAniamtionGroup,
-  ] = useState<BABYLON.AnimationGroup | null>(null);
+
+  const dispatch = useDispatch();
+  const modelAssets = useSelector((state) => state.modelAssets);
 
   useEffect(() => {
-    if (currentAnimatioGroup) {
-      if (isPlaying) {
-        currentAnimatioGroup.play();
-      } else {
-        currentAnimatioGroup.pause();
-      }
-    }
-  }, [currentAnimatioGroup, isPlaying]);
+    console.log("modelAssets: ", modelAssets);
+  }, [modelAssets]);
 
   // initial setting
   useEffect(() => {
@@ -155,8 +151,6 @@ const useRendering = (
 
       // primary data : animationGroups, meshes, skeletons, transformNodes
       if (animationGroups.length !== 0) {
-        setCurrentAniamtionGroup(animationGroups[0]);
-
         animationGroups.forEach((animationGroup) => {
           animationGroup.pause();
           scene.addAnimationGroup(animationGroup);
@@ -268,45 +262,88 @@ const useRendering = (
 
   // when new file is dropped
   useEffect(() => {
-    const loadFbxFile = async (file: File, scene: BABYLON.Scene) => {
-      const glbFileUrl = await convertFbxToGlb(file)
-        .then((res) => res)
-        .catch((err) => alert(err));
-      const loadedAssetContainer = await BABYLON.SceneLoader.LoadAssetContainerAsync(
-        glbFileUrl,
-        "",
-        scene
-      );
-      addAssetsToScene(loadedAssetContainer, scene);
-    };
+    if (
+      renderingCanvas.current &&
+      renderingCanvas.current.id === "renderingCanvas1"
+    ) {
+      const loadFbxFile = async (file: File, scene: BABYLON.Scene) => {
+        const glbFileUrl = await convertFbxToGlb(file)
+          .then((res) => res)
+          .catch((err) => alert(err));
 
-    const loadGlbFile = async (file: unknown, scene: BABYLON.Scene) => {
-      const loadedAssetContainer = await BABYLON.SceneLoader.LoadAssetContainerAsync(
-        "file:",
-        file as string, // error without type assertion
-        scene
-      );
-      addAssetsToScene(loadedAssetContainer, scene);
-    };
+        const loadedAssetContainer = await BABYLON.SceneLoader.LoadAssetContainerAsync(
+          glbFileUrl,
+          "",
+          scene
+        );
 
-    if (scene && currentFile) {
-      let fileExtension;
+        const {
+          animationGroups,
+          meshes,
+          skeletons,
+          transformNodes,
+        } = loadedAssetContainer;
 
-      try {
-        fileExtension = getFileExtension(currentFile);
-      } catch (error) {
-        alert("Can't get the extension of this file.");
-      }
+        const newContainer = {
+          id: uuidv4(),
+          fileName: file.name,
+          animationGroups,
+          meshes,
+          skeleton: skeletons[0],
+          transformNodes,
+        };
 
-      if (fileExtension) {
-        if (fileExtension === "glb") {
-          loadGlbFile(currentFile, scene);
-        } else if (fileExtension === "fbx") {
-          loadFbxFile(currentFile, scene);
+        dispatch(loadModelAssets({ newContainer }));
+        // addAssetsToScene(loadedAssetContainer, scene);
+      };
+
+      const loadGlbFile = async (file: unknown, scene: BABYLON.Scene) => {
+        const loadedAssetContainer = await BABYLON.SceneLoader.LoadAssetContainerAsync(
+          "file:",
+          file as string, // error without type assertion
+          scene
+        );
+
+        const {
+          animationGroups,
+          meshes,
+          skeletons,
+          transformNodes,
+        } = loadedAssetContainer;
+
+        const newContainer = {
+          id: uuidv4(),
+          // @ts-ignore
+          fileName: file.name,
+          animationGroups,
+          meshes,
+          skeleton: skeletons[0],
+          transformNodes,
+        };
+
+        dispatch(loadModelAssets({ newContainer }));
+        // addAssetsToScene(loadedAssetContainer, scene);
+      };
+
+      if (scene && currentFile) {
+        let fileExtension;
+
+        try {
+          fileExtension = getFileExtension(currentFile);
+        } catch (error) {
+          alert("Can't get the extension of this file.");
+        }
+
+        if (fileExtension) {
+          if (fileExtension === "glb") {
+            loadGlbFile(currentFile, scene);
+          } else if (fileExtension === "fbx") {
+            loadFbxFile(currentFile, scene);
+          }
         }
       }
     }
-  }, [addAssetsToScene, currentFile, scene]);
+  }, [addAssetsToScene, currentFile, dispatch, renderingCanvas, scene]);
 
   // manage gizmo shortcut
   useEffect(() => {
