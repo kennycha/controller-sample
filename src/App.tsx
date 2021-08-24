@@ -6,7 +6,6 @@ import { useRendering } from "./hooks";
 function App() {
   const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [isSplited, setIsSplited] = useState<boolean>(true);
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
 
   const renderingCanvas1 = useRef<HTMLCanvasElement>(null);
   const renderingCanvas2 = useRef<HTMLCanvasElement>(null);
@@ -20,38 +19,42 @@ function App() {
     }
   };
 
+  const handleToggleSplit = () => {
+    setIsSplited((prev) => !prev);
+  };
+
   const { getRootProps } = useDropzone({
     onDrop: handleDrop,
   });
 
-  setTimeout(() => {
-    setIsPlaying(true);
-    setIsSplited(true);
-  }, 10000);
-
   // redux로 가지고 있어야 하는 전역 데이터
   // canvas 외의 것들을 redux로 관리할 듯
-  useRendering(currentFile, renderingCanvas1, isPlaying);
-  useRendering(currentFile, renderingCanvas2, isPlaying);
+  useRendering(currentFile, renderingCanvas1);
+  useRendering(currentFile, renderingCanvas2);
 
   return (
-    <Container {...getRootProps()} isSplited={isSplited}>
+    <Container isSplited={isSplited}>
       <div className="canvas-wrapper">
         <canvas
           id="renderingCanvas1"
           ref={renderingCanvas1}
           className="renderingCanvas"
         ></canvas>
-        {isSplited && (
-          <canvas
-            id="renderingCanvas2"
-            ref={renderingCanvas2}
-            className="renderingCanvas"
-          ></canvas>
-        )}
+        <canvas
+          id="renderingCanvas2"
+          ref={renderingCanvas2}
+          className="renderingCanvas"
+        ></canvas>
       </div>
-      <div className="editing-div">
-        <div className="over-height-placeholder"></div>
+      <div className="div-wrapper">
+        <div {...getRootProps()} className="droping-div">
+          Drop File Here
+        </div>
+        <div className="editing-div">
+          <button className="toggle-split" onClick={handleToggleSplit}>
+            Toggle Split
+          </button>
+        </div>
       </div>
     </Container>
   );
@@ -70,24 +73,54 @@ const Container = styled.div<ContainerProps>`
 
   .canvas-wrapper {
     width: 100%;
+    height: 100%;
     display: flex;
     justify-content: center;
 
     .renderingCanvas {
-      height: 100%;
-      width: ${(props) => (props.isSplited ? "50%" : "100%")};
+      height: 100vh;
       border: 1px solid black;
+    }
+
+    #renderingCanvas1 {
+      width: ${(props) => (props.isSplited ? "50%" : "100%")};
+    }
+
+    #renderingCanvas2 {
+      width: ${(props) => (props.isSplited ? "50%" : "0%")};
     }
   }
 
-  .editing-div {
-    min-height: 100%;
-    width: 100%;
-    background-color: blueviolet;
+  .div-wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
     overflow-y: scroll;
 
-    .over-height-placeholder {
-      height: 3000px;
+    .droping-div {
+      font-size: 24px;
+      width: 100%;
+      height: 30%;
+      background-color: yellowgreen;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .editing-div {
+      width: 100%;
+      height: 70%;
+      max-height: 70%;
+      background-color: blueviolet;
+
+      .toggle-split {
+        width: 100%;
+        height: 24px;
+        font-size: 14px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
     }
   }
 `;
