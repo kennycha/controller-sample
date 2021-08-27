@@ -1,41 +1,32 @@
 import * as BABYLON from "@babylonjs/core";
 
-interface TransformKey {
-  frame: number;
-  value: BABYLON.Vector3;
-}
+type Vector3OrNumber = BABYLON.Vector3 | number;
 
-interface IkConstraintKey {
+export interface TransformKey<T extends Vector3OrNumber> {
   frame: number;
-}
-
-interface FkConstraintKey {
-  frame: number;
-}
-
-interface FilterData {
-  isApplied: boolean;
-  params?: {
-    beta: number;
-    minCutoff: number;
-  };
+  value: T;
 }
 
 export interface ShootMotionIngredient {
+  id: string;
   layerId: string;
   boneUniqueId: number;
   transformKeys: {
-    positionTransform: TransformKey[];
-    rotationTransform: TransformKey[];
-    scaleTransform: TransformKey[];
-  };
-  constraintKeys: {
-    ikConstraint: IkConstraintKey[];
-    fkConstraint: FkConstraintKey[];
-  };
-  filterData: {
-    positionFilter: FilterData;
-    rotationFilter: FilterData;
+    position: {
+      x: TransformKey<number>[];
+      y: TransformKey<number>[];
+      z: TransformKey<number>[];
+    };
+    rotation: {
+      x: TransformKey<number>[];
+      y: TransformKey<number>[];
+      z: TransformKey<number>[];
+    };
+    scale: {
+      x: TransformKey<number>[];
+      y: TransformKey<number>[];
+      z: TransformKey<number>[];
+    };
   };
 }
 
@@ -43,9 +34,10 @@ export interface ShootMotion {
   id: string;
   assetContainerId: string;
   animationGroupUniqueId: number;
-  motionIngredients: ShootMotionIngredient[];
   layerIds: string[];
   boneUniqueIds: number[];
+  controllerUniqueIds: number[];
+  motionIngredients: ShootMotionIngredient[];
 }
 
 export interface ShootAssetContainer {
@@ -55,4 +47,5 @@ export interface ShootAssetContainer {
   meshes: BABYLON.AbstractMesh[];
   skeleton: BABYLON.Skeleton;
   transformNodes: BABYLON.TransformNode[];
+  controllers: BABYLON.Mesh[];
 }
