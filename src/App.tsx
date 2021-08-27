@@ -295,10 +295,10 @@ function App() {
                 "originalRotationQuaternionKeys: ",
                 originalRotationQuaternionKeys
               );
-              const firstRotationQuaternion: BABYLON.Quaternion = originalRotationQuaternionKeys[0].value
-                .clone()
-                .normalize();
-              const firstRotation = firstRotationQuaternion.toEulerAngles();
+              // const firstRotationQuaternion: BABYLON.Quaternion = originalRotationQuaternionKeys[0].value
+              //   .clone()
+              //   .normalize();
+              // const firstRotation = firstRotationQuaternion.toEulerAngles();
 
               // console.log(
               //   "firstRotationQuaternion: ",
