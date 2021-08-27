@@ -5,7 +5,6 @@ import { useDispatch } from "react-redux";
 import { v4 as uuidv4 } from "uuid";
 import { convertFbxToGlb, getFileExtension } from "../utils";
 import { loadModelAssets } from "../actions/modelAssets";
-import { useSelector } from "../reducers";
 
 const SKELETON_VIEWER_OPTION = {
   pauseAnimations: false,
@@ -24,22 +23,18 @@ const SKELETON_VIEWER_OPTION = {
 
 const useRendering = (
   currentFile: File | null,
-  renderingCanvas: RefObject<HTMLCanvasElement>
+  renderingCanvas: RefObject<HTMLCanvasElement>,
+  currentGizmoTarget: BABYLON.TransformNode | BABYLON.Mesh | null,
+  setCurrentGizmoTarget: React.Dispatch<
+    React.SetStateAction<BABYLON.TransformNode | BABYLON.Mesh | null>
+  >
 ) => {
   const [scene, setScene] = useState<BABYLON.Scene | null>(null);
   const [gizmoManger, setGizmoManager] = useState<BABYLON.GizmoManager | null>(
     null
   );
-  const [currentGizmoTarget, setCurrentGizmoTarget] = useState<
-    BABYLON.TransformNode | BABYLON.Mesh | null
-  >(null);
 
   const dispatch = useDispatch();
-  const modelAssets = useSelector((state) => state.modelAssets);
-
-  useEffect(() => {
-    console.log("modelAssets: ", modelAssets);
-  }, [modelAssets]);
 
   // initial setting
   useEffect(() => {
@@ -245,7 +240,7 @@ const useRendering = (
         scene.addTexture(texture);
       });
     },
-    [renderingCanvas]
+    [renderingCanvas, setCurrentGizmoTarget]
   );
 
   // when gizmo target changed
@@ -291,6 +286,7 @@ const useRendering = (
           meshes,
           skeleton: skeletons[0],
           transformNodes,
+          controllers: [],
         };
 
         dispatch(loadModelAssets({ newContainer }));
@@ -319,6 +315,7 @@ const useRendering = (
           meshes,
           skeleton: skeletons[0],
           transformNodes,
+          controllers: [],
         };
 
         dispatch(loadModelAssets({ newContainer }));
@@ -407,7 +404,7 @@ const useRendering = (
         document.removeEventListener("keydown", handleKeyDown);
       };
     }
-  }, [gizmoManger]);
+  }, [gizmoManger, setCurrentGizmoTarget]);
 
   return {};
 };
