@@ -53,74 +53,8 @@ function App() {
   const modelAssets = useSelector((state) => state.modelAssets);
 
   useEffect(() => {
-    if (currentAnimationGroup) {
-      currentAnimationGroup.play();
-      // currentAnimationGroup.pause();
-      // currentAnimationGroup.goToFrame(0);
-    }
-  }, [currentAnimationGroup]);
-
-  useEffect(() => {
     console.log("modelAssets: ", modelAssets);
   }, [modelAssets]);
-
-  setTimeout(() => {
-    if (
-      modelAssets[0] &&
-      modelAssets[0].skeleton &&
-      modelAssets[0].controllers.length > 0
-    ) {
-      modelAssets[0].controllers.forEach((controller, idx) => {
-        const targetBone = modelAssets[0].skeleton.bones.find(
-          (bone) => bone.uniqueId === parseInt(controller.state)
-        );
-
-        console.log("controller name: ", controller.name);
-        console.log(
-          "controller local position: ",
-          roundVector3(controller.position, 4)
-        );
-        console.log(
-          "controller absolute position: ",
-          roundVector3(controller.absolutePosition, 4)
-        );
-        console.log(
-          "controller absolute rotationQuaternion: ",
-          roundQuaternion(controller.absoluteRotationQuaternion, 4)
-        );
-        console.log(
-          "controller local scale: ",
-          roundVector3(controller.scaling, 4)
-        );
-        console.log(
-          "controller absolute scale: ",
-          roundVector3(controller.absoluteScaling, 4)
-        );
-        if (targetBone) {
-          console.log("targetBone name: ", targetBone.name);
-          console.log(
-            "targetBone local position: ",
-            roundVector3(targetBone.position, 4)
-          );
-          console.log(
-            "targetBone absolute position: ",
-            roundVector3(targetBone.getAbsolutePosition(), 4)
-          );
-          console.log(
-            "targetBone world rotationQuaternion: ",
-            roundQuaternion(
-              targetBone.getRotationQuaternion(BABYLON.Space.WORLD),
-              2
-            )
-          );
-          console.log(
-            "targetBone local scale: ",
-            roundVector3(targetBone.getScale(), 4)
-          );
-        }
-      });
-    }
-  }, 10000);
 
   const handleDrop = (files: File[]) => {
     if (files.length > 1) {
@@ -188,7 +122,7 @@ function App() {
           }
         });
         modelAssets[0].transformNodes.forEach((transformNode) => {
-          transformNode.getScene().addTransformNode(transformNode);
+          scene.addTransformNode(transformNode);
         });
       }
     }
@@ -202,6 +136,7 @@ function App() {
       transformNodes,
       controllers,
     } = modelAssets[0];
+    console.log("modelAsset: ", modelAssets[0]);
     if (controllers.length > 0) {
       return;
     }
@@ -403,6 +338,83 @@ function App() {
     }
   };
 
+  const handlePlayAnimationGroup = () => {
+    if (currentAnimationGroup) {
+      currentAnimationGroup.play();
+    }
+  };
+
+  const handlePauseAnimationGroup = () => {
+    if (currentAnimationGroup) {
+      currentAnimationGroup.pause();
+    }
+  };
+
+  const handleStopAnimationGroup = () => {
+    if (currentAnimationGroup) {
+      currentAnimationGroup.pause();
+      currentAnimationGroup.goToFrame(0);
+    }
+  };
+
+  const handleLogData = () => {
+    if (
+      modelAssets[0] &&
+      modelAssets[0].skeleton &&
+      modelAssets[0].controllers.length > 0
+    ) {
+      modelAssets[0].controllers.forEach((controller, idx) => {
+        const targetBone = modelAssets[0].skeleton.bones.find(
+          (bone) => bone.uniqueId === parseInt(controller.state)
+        );
+
+        console.log("controller name: ", controller.name);
+        console.log(
+          "controller local position: ",
+          roundVector3(controller.position, 4)
+        );
+        console.log(
+          "controller absolute position: ",
+          roundVector3(controller.absolutePosition, 4)
+        );
+        console.log(
+          "controller absolute rotationQuaternion: ",
+          roundQuaternion(controller.absoluteRotationQuaternion, 4)
+        );
+        // console.log(
+        //   "controller local scale: ",
+        //   roundVector3(controller.scaling, 4)
+        // );
+        // console.log(
+        //   "controller absolute scale: ",
+        //   roundVector3(controller.absoluteScaling, 4)
+        // );
+        if (targetBone) {
+          console.log("targetBone name: ", targetBone.name);
+          console.log(
+            "targetBone local position: ",
+            roundVector3(targetBone.position, 4)
+          );
+          console.log(
+            "targetBone absolute position: ",
+            roundVector3(targetBone.getAbsolutePosition(), 4)
+          );
+          console.log(
+            "targetBone world rotationQuaternion: ",
+            roundQuaternion(
+              targetBone.getRotationQuaternion(BABYLON.Space.WORLD),
+              2
+            )
+          );
+          // console.log(
+          //   "targetBone local scale: ",
+          //   roundVector3(targetBone.getScale(), 4)
+          // );
+        }
+      });
+    }
+  };
+
   const { getRootProps } = useDropzone({
     onDrop: handleDrop,
   });
@@ -444,6 +456,21 @@ function App() {
           </button>
           <button className="editing-button" onClick={handleAddControllers}>
             Add Controllers
+          </button>
+          <button className="editing-button" onClick={handleLogData}>
+            Log Data
+          </button>
+          <button className="editing-button" onClick={handlePlayAnimationGroup}>
+            Play AnimationGroup
+          </button>
+          <button
+            className="editing-button"
+            onClick={handlePauseAnimationGroup}
+          >
+            Pause AnimationGroup
+          </button>
+          <button className="editing-button" onClick={handleStopAnimationGroup}>
+            Stop AnimationGroup
           </button>
         </div>
       </div>
