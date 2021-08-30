@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { ChangeEvent, useEffect, useRef, useState } from "react";
 import * as BABYLON from "@babylonjs/core";
 import styled from "styled-components";
 import { useDropzone } from "react-dropzone";
@@ -74,6 +74,7 @@ function App() {
       const { animationGroups, meshes, skeleton } = modelAssets[0];
       if (animationGroups && meshes && skeleton) {
         const scene = skeleton.getScene();
+        setCurrentAnimationGroup(animationGroups[0]);
         animationGroups.forEach((animationGroup) => {
           animationGroup.pause();
           animationGroup.goToFrame(0);
@@ -136,29 +137,38 @@ function App() {
       transformNodes,
       controllers,
     } = modelAssets[0];
-    console.log("modelAsset: ", modelAssets[0]);
     if (controllers.length > 0) {
       return;
     }
     if (animationGroups && meshes && skeleton && transformNodes) {
+      // 새 animation group 생성
       const newAnimationGroup = new BABYLON.AnimationGroup(
         animationGroups[0].name,
         meshes[0].getScene()
       );
+
+      // 기존 animation group에 담겨있던 요소들 그대로 옮김
       animationGroups[0].targetedAnimations.forEach((targetedAnimation) => {
         newAnimationGroup.addTargetedAnimation(
           targetedAnimation.animation,
           targetedAnimation.target
         );
       });
+
+      // 컨트롤러 담을 배열
       const controllers: BABYLON.Mesh[] = [];
+
+      // bone마다 돌면서 컨트롤러 생성
       skeleton.bones.forEach((bone, idx) => {
+        // 리타게팅 맵 24개 주요 bone에 속하는 지 확인
         if (TARGET_BONE_NAMES.includes(bone.name)) {
+          // 컨트롤러 생성
           const controller = BABYLON.MeshBuilder.CreateTorus(
             `${bone.name}_Ctrl`,
             { diameter: 0.3, thickness: 0.01 },
             bone.getScene()
           );
+          // 생성 시 bone의 absolute position과 동일하게
           controller.setAbsolutePosition(bone.getAbsolutePosition());
           controller.renderingGroupId = 3;
           controller.state = bone.uniqueId.toString();
@@ -225,11 +235,11 @@ function App() {
               // 아래 local들을 world로 바꿔서 controller의 local에 넣으면 될 듯?
               const originalPositionKeys = positionAnimation.getKeys();
               const originalRotationQuaternionKeys = rotationQuaternionAnimation.getKeys();
-              console.log("originalPositionKeys: ", originalPositionKeys);
-              console.log(
-                "originalRotationQuaternionKeys: ",
-                originalRotationQuaternionKeys
-              );
+              // console.log("originalPositionKeys: ", originalPositionKeys);
+              // console.log(
+              //   "originalRotationQuaternionKeys: ",
+              //   originalRotationQuaternionKeys
+              // );
               // const firstRotationQuaternion: BABYLON.Quaternion = originalRotationQuaternionKeys[0].value
               //   .clone()
               //   .normalize();
@@ -311,6 +321,9 @@ function App() {
       if (currentAnimationGroup) {
         currentAnimationGroup.stop();
       }
+      newAnimationGroup.play();
+      newAnimationGroup.pause();
+      newAnimationGroup.goToFrame(0);
       setCurrentAnimationGroup(newAnimationGroup);
       controllers.forEach((controller, idx) => {
         const { state } = controller;
@@ -364,54 +377,75 @@ function App() {
       modelAssets[0].controllers.length > 0
     ) {
       modelAssets[0].controllers.forEach((controller, idx) => {
-        const targetBone = modelAssets[0].skeleton.bones.find(
-          (bone) => bone.uniqueId === parseInt(controller.state)
-        );
-
-        console.log("controller name: ", controller.name);
-        console.log(
-          "controller local position: ",
-          roundVector3(controller.position, 4)
-        );
-        console.log(
-          "controller absolute position: ",
-          roundVector3(controller.absolutePosition, 4)
-        );
-        console.log(
-          "controller absolute rotationQuaternion: ",
-          roundQuaternion(controller.absoluteRotationQuaternion, 4)
-        );
-        // console.log(
-        //   "controller local scale: ",
-        //   roundVector3(controller.scaling, 4)
-        // );
-        // console.log(
-        //   "controller absolute scale: ",
-        //   roundVector3(controller.absoluteScaling, 4)
-        // );
-        if (targetBone) {
-          console.log("targetBone name: ", targetBone.name);
+        if (idx < 5) {
+          const targetBone = modelAssets[0].skeleton.bones.find(
+            (bone) => bone.uniqueId === parseInt(controller.state)
+          );
+          console.log("------------------------------------------");
+          console.log("controller name: ", controller.name);
           console.log(
-            "targetBone local position: ",
-            roundVector3(targetBone.position, 4)
+            "controller local position: ",
+            roundVector3(controller.position, 4)
           );
           console.log(
-            "targetBone absolute position: ",
-            roundVector3(targetBone.getAbsolutePosition(), 4)
+            "controller absolute position: ",
+            roundVector3(controller.absolutePosition, 4)
           );
           console.log(
-            "targetBone world rotationQuaternion: ",
-            roundQuaternion(
-              targetBone.getRotationQuaternion(BABYLON.Space.WORLD),
-              2
-            )
+            "controller absolute rotationQuaternion: ",
+            roundQuaternion(controller.absoluteRotationQuaternion, 4)
           );
           // console.log(
-          //   "targetBone local scale: ",
-          //   roundVector3(targetBone.getScale(), 4)
+          //   "controller local scale: ",
+          //   roundVector3(controller.scaling, 4)
           // );
+          // console.log(
+          //   "controller absolute scale: ",
+          //   roundVector3(controller.absoluteScaling, 4)
+          // );
+          if (targetBone) {
+            console.log("------------------------------------------");
+            console.log("targetBone name: ", targetBone.name);
+            console.log(
+              "targetBone local position: ",
+              roundVector3(targetBone.position, 4)
+            );
+            console.log(
+              "targetBone absolute position: ",
+              roundVector3(targetBone.getAbsolutePosition(), 4)
+            );
+            console.log(
+              "targetBone world rotationQuaternion: ",
+              roundQuaternion(
+                targetBone.getRotationQuaternion(BABYLON.Space.WORLD),
+                2
+              )
+            );
+            // console.log(
+            //   "targetBone local scale: ",
+            //   roundVector3(targetBone.getScale(), 4)
+            // );
+            const parentController = controller.parent;
+            const parentBone = targetBone.getParent();
+            console.log("------------------------------------------");
+            console.log("parentController: ", parentController);
+            console.log("parentBone: ", parentBone);
+            if (parentController && parentBone) {
+              console.log(
+                "parentController matrix: ",
+                parentController.getWorldMatrix()
+              );
+              console.log("parentBone matrix: ", parentBone.getWorldMatrix());
+            }
+          }
         }
       });
+    }
+  };
+
+  const handleGoToFrame = (event: ChangeEvent<HTMLInputElement>) => {
+    if (currentAnimationGroup && parseFloat(event.target.value)) {
+      currentAnimationGroup.goToFrame(parseFloat(event.target.value));
     }
   };
 
@@ -472,6 +506,12 @@ function App() {
           <button className="editing-button" onClick={handleStopAnimationGroup}>
             Stop AnimationGroup
           </button>
+          <input
+            type="number"
+            className="editing-input"
+            placeholder="go to frame"
+            onChange={handleGoToFrame}
+          />
         </div>
       </div>
     </Container>
@@ -538,6 +578,13 @@ const Container = styled.div<ContainerProps>`
         display: flex;
         justify-content: center;
         align-items: center;
+      }
+
+      .editing-input {
+        width: 100%;
+        height: 24px;
+        font-size: 14px;
+        padding-left: 5px;
       }
     }
   }
