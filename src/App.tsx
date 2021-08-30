@@ -41,6 +41,21 @@ const TARGET_BONE_NAMES = [
   "mixamorig:RightHandIndex1",
 ];
 
+const SKELETON_VIEWER_OPTION = {
+  pauseAnimations: false,
+  returnToRest: false,
+  computeBonesUsingShaders: true,
+  useAllBones: true, // error with false
+  displayMode: BABYLON.SkeletonViewer.DISPLAY_SPHERE_AND_SPURS,
+  displayOptions: {
+    sphereBaseSize: 0.01,
+    sphereScaleUnit: 15,
+    sphereFactor: 0.9,
+    midStep: 0.25,
+    midStepFactor: 0.05,
+  },
+};
+
 function App() {
   const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [isSplited, setIsSplited] = useState<boolean>(false);
@@ -100,6 +115,16 @@ function App() {
         });
 
         scene.addSkeleton(modelAssets[0].skeleton);
+        // add skeleton viewer
+        const skeletonViewer = new BABYLON.SkeletonViewer(
+          modelAssets[0].skeleton,
+          meshes[0],
+          scene,
+          true,
+          meshes[0].renderingGroupId + 1,
+          SKELETON_VIEWER_OPTION
+        );
+        skeletonViewer.isEnabled = true; // need this line because of the babylon bug
 
         skeleton.bones.forEach((bone) => {
           if (!bone.name.toLowerCase().includes("scene")) {

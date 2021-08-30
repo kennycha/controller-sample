@@ -1,25 +1,10 @@
-import { RefObject, useCallback, useEffect, useState } from "react";
+import { RefObject, useEffect, useState } from "react";
 import * as BABYLON from "@babylonjs/core";
 import "@babylonjs/loaders/glTF";
 import { useDispatch } from "react-redux";
 import { v4 as uuidv4 } from "uuid";
 import { convertFbxToGlb, getFileExtension, roundVector3 } from "../utils";
 import { loadModelAssets } from "../actions/modelAssets";
-
-const SKELETON_VIEWER_OPTION = {
-  pauseAnimations: false,
-  returnToRest: false,
-  computeBonesUsingShaders: true,
-  useAllBones: true, // error with false
-  displayMode: BABYLON.SkeletonViewer.DISPLAY_SPHERE_AND_SPURS,
-  displayOptions: {
-    sphereBaseSize: 0.01,
-    sphereScaleUnit: 15,
-    sphereFactor: 0.9,
-    midStep: 0.25,
-    midStepFactor: 0.05,
-  },
-};
 
 const useRendering = (
   currentFile: File | null,
