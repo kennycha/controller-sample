@@ -444,7 +444,7 @@ function App() {
   };
 
   const handleGoToFrame = (event: ChangeEvent<HTMLInputElement>) => {
-    if (currentAnimationGroup && parseFloat(event.target.value)) {
+    if (currentAnimationGroup && event.target.value.length) {
       currentAnimationGroup.goToFrame(parseFloat(event.target.value));
     }
   };
