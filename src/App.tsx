@@ -1,4 +1,10 @@
-import React, { ChangeEvent, useEffect, useRef, useState } from "react";
+import React, {
+  ChangeEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import * as BABYLON from "@babylonjs/core";
 import styled from "styled-components";
 import { useDropzone } from "react-dropzone";
@@ -50,6 +56,7 @@ function App() {
   const renderingCanvas2 = useRef<HTMLCanvasElement>(null);
 
   const dispatch = useDispatch();
+
   const modelAssets = useSelector((state) => state.modelAssets);
 
   useEffect(() => {
@@ -72,20 +79,31 @@ function App() {
   const handleAddAssets = () => {
     if (modelAssets[0]) {
       const { animationGroups, meshes, skeleton } = modelAssets[0];
+
       if (animationGroups && meshes && skeleton) {
         const scene = skeleton.getScene();
-        setCurrentAnimationGroup(animationGroups[0]);
-        animationGroups.forEach((animationGroup) => {
+
+        animationGroups.forEach((animationGroup, idx) => {
+          // for prevent auto play and go to the first frame
           animationGroup.pause();
           animationGroup.goToFrame(0);
+
+          if (idx === 0) {
+            setCurrentAnimationGroup(animationGroup);
+          }
         });
+
         meshes.forEach((mesh) => {
+          // make mesh unpickable to pick joint spheres and gizmo
           mesh.isPickable = false;
           scene.addMesh(mesh);
         });
+
         scene.addSkeleton(modelAssets[0].skeleton);
+
         skeleton.bones.forEach((bone) => {
           if (!bone.name.toLowerCase().includes("scene")) {
+            // create joint sphere for each bones
             const jointSphere = BABYLON.MeshBuilder.CreateSphere(
               "jointSphere",
               { diameter: 3 },
@@ -96,6 +114,7 @@ function App() {
 
             // manage joint sphere actions
             jointSphere.actionManager = new BABYLON.ActionManager(scene);
+            // with clicking joint sphere, its linkedBone's transform will be the current gizmo target, which means the gizmo will be attached to it
             jointSphere.actionManager.registerAction(
               new BABYLON.ExecuteCodeAction(
                 BABYLON.ActionManager.OnPickDownTrigger,
@@ -104,6 +123,7 @@ function App() {
                 }
               )
             );
+            // pointer cursor with pointer over
             jointSphere.actionManager.registerAction(
               new BABYLON.ExecuteCodeAction(
                 BABYLON.ActionManager.OnPointerOverTrigger,
@@ -112,6 +132,7 @@ function App() {
                 }
               )
             );
+            // default cursor with pointer out
             jointSphere.actionManager.registerAction(
               new BABYLON.ExecuteCodeAction(
                 BABYLON.ActionManager.OnPointerOutTrigger,
@@ -122,6 +143,7 @@ function App() {
             );
           }
         });
+
         modelAssets[0].transformNodes.forEach((transformNode) => {
           scene.addTransformNode(transformNode);
         });
@@ -137,17 +159,20 @@ function App() {
       transformNodes,
       controllers,
     } = modelAssets[0];
+
+    // have controllers already, then return
     if (controllers.length > 0) {
       return;
     }
+
     if (animationGroups && meshes && skeleton && transformNodes) {
-      // 새 animation group 생성
+      // create new animation group which will be set to currentAnimationGroup
       const newAnimationGroup = new BABYLON.AnimationGroup(
         animationGroups[0].name,
         meshes[0].getScene()
       );
 
-      // 기존 animation group에 담겨있던 요소들 그대로 옮김
+      // clone and add targetAnimations that already existed in the origin animationGroup
       animationGroups[0].targetedAnimations.forEach((targetedAnimation) => {
         newAnimationGroup.addTargetedAnimation(
           targetedAnimation.animation,
@@ -155,48 +180,61 @@ function App() {
         );
       });
 
-      // 컨트롤러 담을 배열
+      // array where controllers will be added
       const controllers: BABYLON.Mesh[] = [];
 
-      // bone마다 돌면서 컨트롤러 생성
+      // create controller for each bones
       skeleton.bones.forEach((bone, idx) => {
-        // 리타게팅 맵 24개 주요 bone에 속하는 지 확인
+        // check if this bone is included in the retargetMap
         if (TARGET_BONE_NAMES.includes(bone.name)) {
-          // 컨트롤러 생성
+          // create controller
           const controller = BABYLON.MeshBuilder.CreateTorus(
             `${bone.name}_Ctrl`,
-            { diameter: 0.3, thickness: 0.01 },
+            { diameter: 30, thickness: 1 },
             bone.getScene()
           );
-          // 생성 시 bone의 absolute position과 동일하게
-          controller.setAbsolutePosition(bone.getAbsolutePosition());
+          // initial position setting
+          controller.position = bone.position;
           controller.renderingGroupId = 3;
+          // use controller's state for linking it to its corresponding bone
           controller.state = bone.uniqueId.toString();
 
-          const newPositionAnimation = new BABYLON.Animation(
+          if (controllers.length === 0) {
+            // set Armature bone as the parent of hips contoller -> for sync the overall position, rotation and scale of the model
+            controller.setParent(bone.getParent());
+          }
+
+          // new animations targeted to the controller
+          const controllerPositionAnimation = new BABYLON.Animation(
             `${controller.name}_position`,
             "position",
             1,
             BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
             BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
           );
-          const newRotationQuaternionAnimation = new BABYLON.Animation(
+
+          const controllerRotationQuaternionAnimation = new BABYLON.Animation(
             `${controller.name}_rotationQuaternon`,
             "rotationQuaternion",
             1,
             BABYLON.Animation.ANIMATIONTYPE_QUATERNION,
             BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
           );
-          const newScaleAnimation = new BABYLON.Animation(
+
+          const controllerScaleAnimation = new BABYLON.Animation(
             `${controller.name}_scaling`,
             "scaling",
             1,
             BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
             BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
           );
+
+          // manmage controller's action manager
           controller.actionManager = new BABYLON.ActionManager(
             skeleton.getScene()
           );
+
+          // similar actions to the actions of the joint meshes
           controller.actionManager.registerAction(
             new BABYLON.ExecuteCodeAction(
               BABYLON.ActionManager.OnPickDownTrigger,
@@ -205,6 +243,7 @@ function App() {
               }
             )
           );
+
           controller.actionManager.registerAction(
             new BABYLON.ExecuteCodeAction(
               BABYLON.ActionManager.OnPointerOverTrigger,
@@ -214,6 +253,7 @@ function App() {
               }
             )
           );
+
           controller.actionManager.registerAction(
             new BABYLON.ExecuteCodeAction(
               BABYLON.ActionManager.OnPointerOutTrigger,
@@ -225,116 +265,138 @@ function App() {
           );
 
           const transformNode = bone.getTransformNode();
+
           if (transformNode) {
             const [
-              positionAnimation,
-              rotationQuaternionAnimation,
-              scaleAnimation,
+              transformNodePositionAnimation,
+              transformNodeRotationQuaternionAnimation,
+              transformNodeScaleAnimation,
             ] = transformNode.animations;
-            if (controllers.length === 0) {
-              // 아래 local들을 world로 바꿔서 controller의 local에 넣으면 될 듯?
-              const originalPositionKeys = positionAnimation.getKeys();
-              const originalRotationQuaternionKeys = rotationQuaternionAnimation.getKeys();
-              // console.log("originalPositionKeys: ", originalPositionKeys);
-              // console.log(
-              //   "originalRotationQuaternionKeys: ",
-              //   originalRotationQuaternionKeys
-              // );
-              // const firstRotationQuaternion: BABYLON.Quaternion = originalRotationQuaternionKeys[0].value
-              //   .clone()
-              //   .normalize();
-              // const firstRotation = firstRotationQuaternion.toEulerAngles();
 
-              // console.log(
-              //   "firstRotationQuaternion: ",
-              //   roundQuaternion(firstRotationQuaternion, 4)
-              // );
-              // console.log("firstRotation: ", roundVector3(firstRotation, 4));
+            // will delete lines below after checking if the current way (rootController.setParent(armatureBone)) is safe
+            // ---------------------------------------------------------------------------------------------------------
+            // if (controllers.length === 0) {
+            //   // 아래 local들을 world로 바꿔서 controller의 local에 넣으면 될 듯?
+            //   const originalPositionKeys = positionAnimation.getKeys();
+            //   const originalRotationQuaternionKeys = rotationQuaternionAnimation.getKeys();
+            //   // console.log("originalPositionKeys: ", originalPositionKeys);
+            //   // console.log(
+            //   //   "originalRotationQuaternionKeys: ",
+            //   //   originalRotationQuaternionKeys
+            //   // );
+            //   // const firstRotationQuaternion: BABYLON.Quaternion = originalRotationQuaternionKeys[0].value
+            //   //   .clone()
+            //   //   .normalize();
+            //   // const firstRotation = firstRotationQuaternion.toEulerAngles();
 
-              const parentBone = bone.getParent();
-              if (parentBone) {
-                // const parentController = controllers.find((ctrl) => ctrl.state === parentBone.uniqueId.toString())
-                const parentWorldMatrix = parentBone.getWorldMatrix().clone();
-                const newPositionKeys = originalPositionKeys.map((key) => ({
-                  ...key,
-                  value: BABYLON.Vector3.TransformCoordinates(
-                    key.value,
-                    parentWorldMatrix
-                  ),
-                }));
+            //   // console.log(
+            //   //   "firstRotationQuaternion: ",
+            //   //   roundQuaternion(firstRotationQuaternion, 4)
+            //   // );
+            //   // console.log("firstRotation: ", roundVector3(firstRotation, 4));
 
-                // const newRotation = firstRotation.add(
-                //   parentBone.getRotation(BABYLON.Space.WORLD)
-                // );
-                // const newRotationQuaternion = BABYLON.Quaternion.FromEulerAngles(
-                //   newRotation.x,
-                //   newRotation.y,
-                //   newRotation.z
-                // );
-                // console.log(
-                //   "newRotationQuaternion: ",
-                //   roundQuaternion(newRotationQuaternion, 4)
-                // );
-                // console.log("newRotation: ", roundVector3(newRotation, 4));
+            //   const parentBone = bone.getParent();
+            //   if (parentBone) {
+            //     // const parentController = controllers.find((ctrl) => ctrl.state === parentBone.uniqueId.toString())
+            //     const parentWorldMatrix = parentBone.getWorldMatrix().clone();
+            //     const newPositionKeys = originalPositionKeys.map((key) => ({
+            //       ...key,
+            //       value: BABYLON.Vector3.TransformCoordinates(
+            //         key.value,
+            //         parentWorldMatrix
+            //       ),
+            //     }));
 
-                // 에러 방지용 임시코드
-                newPositionAnimation.setKeys(newPositionKeys);
-                newRotationQuaternionAnimation.setKeys(
-                  originalRotationQuaternionKeys
-                );
-              } else {
-                // 에러 방지용 임시코드
-                newPositionAnimation.setKeys(originalPositionKeys);
-                newRotationQuaternionAnimation.setKeys(
-                  originalRotationQuaternionKeys
-                );
-              }
-            } else {
-              newPositionAnimation.setKeys(positionAnimation.getKeys());
-              newRotationQuaternionAnimation.setKeys(
-                rotationQuaternionAnimation.getKeys()
-              );
-            }
-            newScaleAnimation.setKeys(scaleAnimation.getKeys());
+            //     // const newRotation = firstRotation.add(
+            //     //   parentBone.getRotation(BABYLON.Space.WORLD)
+            //     // );
+            //     // const newRotationQuaternion = BABYLON.Quaternion.FromEulerAngles(
+            //     //   newRotation.x,
+            //     //   newRotation.y,
+            //     //   newRotation.z
+            //     // );
+            //     // console.log(
+            //     //   "newRotationQuaternion: ",
+            //     //   roundQuaternion(newRotationQuaternion, 4)
+            //     // );
+            //     // console.log("newRotation: ", roundVector3(newRotation, 4));
+
+            //     // 에러 방지용 임시코드
+            //     newPositionAnimation.setKeys(newPositionKeys);
+            //     newRotationQuaternionAnimation.setKeys(
+            //       originalRotationQuaternionKeys
+            //     );
+            //   } else {
+            //     // 에러 방지용 임시코드
+            //     newPositionAnimation.setKeys(originalPositionKeys);
+            //     newRotationQuaternionAnimation.setKeys(
+            //       originalRotationQuaternionKeys
+            //     );
+            //   }
+            // } else {
+            // ---------------------------------------------------------------------------------------------------------
+
+            // get transformNode animation's keys and set them to the controller animation's keys
+            controllerPositionAnimation.setKeys(
+              transformNodePositionAnimation.getKeys()
+            );
+            controllerRotationQuaternionAnimation.setKeys(
+              transformNodeRotationQuaternionAnimation.getKeys()
+            );
+            // }
+            controllerScaleAnimation.setKeys(
+              transformNodeScaleAnimation.getKeys()
+            );
           } else {
-            newPositionAnimation.setKeys([]);
-            newRotationQuaternionAnimation.setKeys([]);
-            newScaleAnimation.setKeys([]);
+            // without transformNode, then use empty keys for controller animation's keys
+            controllerPositionAnimation.setKeys([]);
+            controllerRotationQuaternionAnimation.setKeys([]);
+            controllerScaleAnimation.setKeys([]);
           }
-          controller.animations = [
-            newPositionAnimation,
-            newRotationQuaternionAnimation,
-            newScaleAnimation,
-          ];
+
+          // push controller animations to controller.animations array
+          controller.animations.push(controllerPositionAnimation);
+          controller.animations.push(controllerRotationQuaternionAnimation);
+          controller.animations.push(controllerScaleAnimation);
+
+          // add targeted animations with controller
           newAnimationGroup.addTargetedAnimation(
-            newPositionAnimation,
+            controllerPositionAnimation,
             controller
           );
+
           newAnimationGroup.addTargetedAnimation(
-            newRotationQuaternionAnimation,
+            controllerRotationQuaternionAnimation,
             controller
           );
-          newAnimationGroup.addTargetedAnimation(newScaleAnimation, controller);
+
+          newAnimationGroup.addTargetedAnimation(
+            controllerScaleAnimation,
+            controller
+          );
+
+          // push controller to its summary array
           controllers.push(controller);
         }
       });
-      if (currentAnimationGroup) {
-        currentAnimationGroup.stop();
-      }
-      newAnimationGroup.play();
-      newAnimationGroup.pause();
-      newAnimationGroup.goToFrame(0);
+
+      // set the new animatioGroup as the current controlled animationGroup
       setCurrentAnimationGroup(newAnimationGroup);
+
+      // set the hierarchy of controllers as same as the hierarchy of bones
       controllers.forEach((controller, idx) => {
+        // maybe change this logic to use scene.getBoneById method
         const { state } = controller;
+
         const targetBone = skeleton.bones.find(
           (bone) => bone.uniqueId === parseInt(state)
         );
+
         if (targetBone) {
           if (targetBone.children.length > 0) {
-            targetBone.children.forEach((child) => {
+            targetBone.children.forEach((childBone) => {
               const childController = controllers.find(
-                (ctrl) => ctrl.state === child.uniqueId.toString()
+                (ctrl) => ctrl.state === childBone.uniqueId.toString()
               );
               if (childController) {
                 childController.setParent(controller);
@@ -343,33 +405,46 @@ function App() {
           }
         }
       });
+
+      // for update properties after setting the hierarchy
+      newAnimationGroup.play();
+      newAnimationGroup.pause();
+      newAnimationGroup.goToFrame(0);
+
+      // update modelAssets with new animationGroup and controllers
       const updatedContainer = {
         ...{ ...modelAssets[0], animationGroups: [newAnimationGroup] },
         controllers,
       };
+
       dispatch(updateModelAssets({ id: modelAssets[0].id, updatedContainer }));
     }
   };
 
-  const handlePlayAnimationGroup = () => {
-    if (currentAnimationGroup) {
-      currentAnimationGroup.play();
+  const handlePlayAnimationGroup = useCallback(() => {
+    if (currentAnimationGroup && !currentAnimationGroup.isPlaying) {
+      if (currentAnimationGroup.isStarted) {
+        currentAnimationGroup.restart();
+      } else {
+        currentAnimationGroup.start();
+      }
     }
-  };
+  }, [currentAnimationGroup]);
 
-  const handlePauseAnimationGroup = () => {
+  const handlePauseAnimationGroup = useCallback(() => {
     if (currentAnimationGroup) {
       currentAnimationGroup.pause();
     }
-  };
+  }, [currentAnimationGroup]);
 
-  const handleStopAnimationGroup = () => {
+  const handleStopAnimationGroup = useCallback(() => {
     if (currentAnimationGroup) {
       currentAnimationGroup.pause();
       currentAnimationGroup.goToFrame(0);
     }
-  };
+  }, [currentAnimationGroup]);
 
+  // will delete lines below, only for the debugging
   const handleLogData = () => {
     if (
       modelAssets[0] &&
