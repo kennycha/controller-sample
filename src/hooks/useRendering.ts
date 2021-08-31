@@ -292,7 +292,7 @@ const useRendering = (
                 gizmoManger.positionGizmoEnabled &&
                 currentGizmoMode === "position"
               ) {
-                const xObservable = gizmoManger.gizmos.positionGizmo!.xGizmo.dragBehavior.onDragObservable.add(
+                const xPositionObservable = gizmoManger.gizmos.positionGizmo!.xGizmo.dragBehavior.onDragObservable.add(
                   ({
                     delta,
                     dragDistance,
@@ -308,7 +308,7 @@ const useRendering = (
                     );
                   }
                 );
-                const yObservable = gizmoManger.gizmos.positionGizmo!.yGizmo.dragBehavior.onDragObservable.add(
+                const yPositionObservable = gizmoManger.gizmos.positionGizmo!.yGizmo.dragBehavior.onDragObservable.add(
                   ({
                     delta,
                     dragDistance,
@@ -324,7 +324,7 @@ const useRendering = (
                     );
                   }
                 );
-                const zObservable = gizmoManger.gizmos.positionGizmo!.zGizmo.dragBehavior.onDragObservable.add(
+                const zPositionObservable = gizmoManger.gizmos.positionGizmo!.zGizmo.dragBehavior.onDragObservable.add(
                   ({
                     delta,
                     dragDistance,
@@ -343,112 +343,123 @@ const useRendering = (
 
                 return () => {
                   gizmoManger.gizmos.positionGizmo!.xGizmo.dragBehavior.onDragObservable.remove(
-                    xObservable
+                    xPositionObservable
                   );
                   gizmoManger.gizmos.positionGizmo!.yGizmo.dragBehavior.onDragObservable.remove(
-                    yObservable
+                    yPositionObservable
                   );
                   gizmoManger.gizmos.positionGizmo!.zGizmo.dragBehavior.onDragObservable.remove(
-                    zObservable
+                    zPositionObservable
                   );
                 };
               } else if (
                 gizmoManger.rotationGizmoEnabled &&
                 currentGizmoMode === "rotation"
               ) {
-                gizmoManger.gizmos.rotationGizmo!.xGizmo.dragBehavior.onDragObservable.add(
+                const xRotationObservable = gizmoManger.gizmos.rotationGizmo!.xGizmo.dragBehavior.onDragObservable.add(
                   ({
                     delta,
                     dragDistance,
                     dragPlaneNormal,
                     dragPlanePoint,
                   }) => {
-                    console.log("delta: ", delta);
-                    console.log("dragDistance: ", dragDistance);
-                    console.log("dragPlaneNormal: ", dragPlaneNormal);
-                    console.log("dragPlanePoint: ", dragPlanePoint);
-                    // linkedTransformNode.rotation = new BABYLON.Vector3(
-                    //   linkedTransformNode.rotation.x + delta.x,
-                    //   linkedTransformNode.rotation.y,
-                    //   linkedTransformNode.rotation.z
-                    // );
+                    // linkedTransformNode.addRotation(delta.x, 0, 0);
                   }
                 );
-                gizmoManger.gizmos.rotationGizmo!.yGizmo.dragBehavior.onDragObservable.add(
+                const yRotationObservable = gizmoManger.gizmos.rotationGizmo!.yGizmo.dragBehavior.onDragObservable.add(
                   ({
                     delta,
                     dragDistance,
                     dragPlaneNormal,
                     dragPlanePoint,
                   }) => {
-                    console.log("delta: ", delta);
-                    console.log("dragDistance: ", dragDistance);
-                    console.log("dragPlaneNormal: ", dragPlaneNormal);
-                    console.log("dragPlanePoint: ", dragPlanePoint);
-                    // linkedTransformNode.rotation = new BABYLON.Vector3(
-                    //   linkedTransformNode.rotation.x,
-                    //   linkedTransformNode.rotation.y + delta.y,
-                    //   linkedTransformNode.rotation.z
-                    // );
+                    // linkedTransformNode.addRotation(0, delta.y, 0);
                   }
                 );
-                gizmoManger.gizmos.rotationGizmo!.zGizmo.dragBehavior.onDragObservable.add(
+                const zRotationObservable = gizmoManger.gizmos.rotationGizmo!.zGizmo.dragBehavior.onDragObservable.add(
                   ({
                     delta,
                     dragDistance,
                     dragPlaneNormal,
                     dragPlanePoint,
                   }) => {
-                    console.log("delta: ", delta);
-                    console.log("dragDistance: ", dragDistance);
-                    console.log("dragPlaneNormal: ", dragPlaneNormal);
-                    console.log("dragPlanePoint: ", dragPlanePoint);
-                    // linkedTransformNode.rotation = new BABYLON.Vector3(
-                    //   linkedTransformNode.rotation.x,
-                    //   linkedTransformNode.rotation.y,
-                    //   linkedTransformNode.rotation.z + delta.z
-                    // );
+                    // linkedTransformNode.addRotation(0, 0, delta.z);
                   }
                 );
+                return () => {
+                  gizmoManger.gizmos.rotationGizmo!.xGizmo.dragBehavior.onDragObservable.remove(
+                    xRotationObservable
+                  );
+                  gizmoManger.gizmos.rotationGizmo!.yGizmo.dragBehavior.onDragObservable.remove(
+                    yRotationObservable
+                  );
+                  gizmoManger.gizmos.rotationGizmo!.zGizmo.dragBehavior.onDragObservable.remove(
+                    zRotationObservable
+                  );
+                };
               } else if (
                 gizmoManger.scaleGizmoEnabled &&
                 currentGizmoMode === "scale"
               ) {
-                gizmoManger.gizmos.scaleGizmo!.xGizmo.dragBehavior.onDragObservable.add(
+                const xScaleObservable = gizmoManger.gizmos.scaleGizmo!.xGizmo.dragBehavior.onDragObservable.add(
                   ({
                     delta,
                     dragDistance,
                     dragPlaneNormal,
                     dragPlanePoint,
                   }) => {
-                    console.log("scale x delta: ", delta);
+                    linkedTransformNode.scaling = new BABYLON.Vector3(
+                      linkedTransformNode.scaling.x + delta.x,
+                      linkedTransformNode.scaling.y + delta.y,
+                      linkedTransformNode.scaling.z + delta.z
+                    );
                   }
                 );
-                gizmoManger.gizmos.scaleGizmo!.yGizmo.dragBehavior.onDragObservable.add(
+                const yScaleObservable = gizmoManger.gizmos.scaleGizmo!.yGizmo.dragBehavior.onDragObservable.add(
                   ({
                     delta,
                     dragDistance,
                     dragPlaneNormal,
                     dragPlanePoint,
                   }) => {
-                    console.log("scale y delta: ", delta);
+                    linkedTransformNode.scaling = new BABYLON.Vector3(
+                      linkedTransformNode.scaling.x + delta.x,
+                      linkedTransformNode.scaling.y + delta.y,
+                      linkedTransformNode.scaling.z + delta.z
+                    );
                   }
                 );
-                gizmoManger.gizmos.scaleGizmo!.zGizmo.dragBehavior.onDragObservable.add(
+                const zScaleObservable = gizmoManger.gizmos.scaleGizmo!.zGizmo.dragBehavior.onDragObservable.add(
                   ({
                     delta,
                     dragDistance,
                     dragPlaneNormal,
                     dragPlanePoint,
                   }) => {
-                    console.log("scale z delta: ", delta);
+                    linkedTransformNode.scaling = new BABYLON.Vector3(
+                      linkedTransformNode.scaling.x + delta.x,
+                      linkedTransformNode.scaling.y + delta.y,
+                      linkedTransformNode.scaling.z + delta.z
+                    );
                   }
                 );
+
+                return () => {
+                  gizmoManger.gizmos.scaleGizmo!.xGizmo.dragBehavior.onDragObservable.remove(
+                    xScaleObservable
+                  );
+                  gizmoManger.gizmos.scaleGizmo!.yGizmo.dragBehavior.onDragObservable.remove(
+                    yScaleObservable
+                  );
+                  gizmoManger.gizmos.scaleGizmo!.zGizmo.dragBehavior.onDragObservable.remove(
+                    zScaleObservable
+                  );
+                };
               } else {
                 switch (currentGizmoMode) {
                   case "position": {
                     gizmoManger.positionGizmoEnabled = true;
-                    const xObservable = gizmoManger.gizmos.positionGizmo!.xGizmo.dragBehavior.onDragObservable.add(
+                    const xPositionObservable = gizmoManger.gizmos.positionGizmo!.xGizmo.dragBehavior.onDragObservable.add(
                       ({
                         delta,
                         dragDistance,
@@ -464,7 +475,7 @@ const useRendering = (
                         );
                       }
                     );
-                    const yObservable = gizmoManger.gizmos.positionGizmo!.yGizmo.dragBehavior.onDragObservable.add(
+                    const yPositionObservable = gizmoManger.gizmos.positionGizmo!.yGizmo.dragBehavior.onDragObservable.add(
                       ({
                         delta,
                         dragDistance,
@@ -480,7 +491,7 @@ const useRendering = (
                         );
                       }
                     );
-                    const zObservable = gizmoManger.gizmos.positionGizmo!.zGizmo.dragBehavior.onDragObservable.add(
+                    const zPositionObservable = gizmoManger.gizmos.positionGizmo!.zGizmo.dragBehavior.onDragObservable.add(
                       ({
                         delta,
                         dragDistance,
@@ -499,13 +510,13 @@ const useRendering = (
 
                     return () => {
                       gizmoManger.gizmos.positionGizmo!.xGizmo.dragBehavior.onDragObservable.remove(
-                        xObservable
+                        xPositionObservable
                       );
                       gizmoManger.gizmos.positionGizmo!.yGizmo.dragBehavior.onDragObservable.remove(
-                        yObservable
+                        yPositionObservable
                       );
                       gizmoManger.gizmos.positionGizmo!.zGizmo.dragBehavior.onDragObservable.remove(
-                        zObservable
+                        zPositionObservable
                       );
                     };
                   }
