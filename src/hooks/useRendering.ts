@@ -346,8 +346,22 @@ const useRendering = (
     if (gizmoManger && currentGizmoTarget) {
       // attach gizmo
       if (currentGizmoTarget.getClassName() === "TransformNode") {
+        if (
+          !gizmoManger.positionGizmoEnabled &&
+          !gizmoManger.rotationGizmoEnabled &&
+          !gizmoManger.scaleGizmoEnabled
+        ) {
+          gizmoManger.positionGizmoEnabled = true;
+        }
         gizmoManger.attachToNode(currentGizmoTarget);
       } else if (currentGizmoTarget.getClassName() === "Mesh") {
+        if (
+          !gizmoManger.positionGizmoEnabled &&
+          !gizmoManger.rotationGizmoEnabled &&
+          !gizmoManger.scaleGizmoEnabled
+        ) {
+          gizmoManger.positionGizmoEnabled = true;
+        }
         gizmoManger.attachToMesh(currentGizmoTarget as BABYLON.Mesh);
       }
     }
