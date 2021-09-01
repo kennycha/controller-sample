@@ -3,11 +3,7 @@ import * as BABYLON from "@babylonjs/core";
 import "@babylonjs/loaders/glTF";
 import { useDispatch } from "react-redux";
 import { v4 as uuidv4 } from "uuid";
-import {
-  convertFbxToGlb,
-  getFileExtension,
-  logGizmoTargetProperties,
-} from "../utils";
+import { convertFbxToGlb, getFileExtension } from "../utils";
 import { loadModelAssets } from "../actions/modelAssets";
 import { useSelector } from "../reducers";
 
@@ -79,22 +75,8 @@ const useRendering = (
         innerGizmoManager.positionGizmoEnabled = true; // set default mode as position
 
         // set gizmoManager observables
-        innerGizmoManager.onAttachedToMeshObservable.add((mesh) => {
-          if (mesh) {
-            if (mesh.state.length) {
-              logGizmoTargetProperties(mesh, "controller", scene);
-            }
-          }
-        });
-        innerGizmoManager.onAttachedToNodeObservable.add((transformNode) => {
-          if (transformNode) {
-            logGizmoTargetProperties(
-              transformNode as BABYLON.TransformNode,
-              "transformNode",
-              scene
-            );
-          }
-        });
+        innerGizmoManager.onAttachedToMeshObservable.add((mesh) => {});
+        innerGizmoManager.onAttachedToNodeObservable.add((transformNode) => {});
       }
     };
 
@@ -132,121 +114,6 @@ const useRendering = (
       };
     }
   }, [renderingCanvas]);
-
-  // unused lines
-  // ----------------------------------------------------------------------------------------
-  // const addAssetsToScene = useCallback(
-  //   (assetContainer: BABYLON.AssetContainer, scene: BABYLON.Scene) => {
-  //     const {
-  //       animationGroups,
-  //       geometries,
-  //       materials,
-  //       meshes,
-  //       textures,
-  //       skeletons,
-  //       transformNodes,
-  //     } = assetContainer;
-
-  //     // primary data : animationGroups, meshes, skeletons, transformNodes
-  //     if (animationGroups.length !== 0) {
-  //       animationGroups.forEach((animationGroup) => {
-  //         animationGroup.pause();
-  //         animationGroup.goToFrame(0);
-  //         scene.addAnimationGroup(animationGroup);
-  //       });
-  //     }
-
-  //     if (meshes.length !== 0) {
-  //       meshes.forEach((mesh) => {
-  //         if (
-  //           renderingCanvas.current &&
-  //           renderingCanvas.current.id === "renderingCanvas2"
-  //         ) {
-  //           mesh.material = new BABYLON.StandardMaterial(
-  //             "standardMaterial",
-  //             scene
-  //           );
-  //         }
-  //         mesh.isPickable = false;
-  //         scene.addMesh(mesh);
-  //       });
-  //     }
-
-  //     if (skeletons.length !== 0) {
-  //       skeletons.forEach((skeleton) => {
-  //         scene.addSkeleton(skeleton);
-  //       });
-
-  //       // add skeleton viewer
-  //       const skeletonViewer = new BABYLON.SkeletonViewer(
-  //         skeletons[0],
-  //         meshes[0],
-  //         scene,
-  //         true,
-  //         meshes[0].renderingGroupId + 1,
-  //         SKELETON_VIEWER_OPTION
-  //       );
-  //       skeletonViewer.isEnabled = true; // should set initially because of the babylon bug
-
-  //       // add joint spheres
-  //       skeletons[0].bones.forEach((bone, idx) => {
-  //         if (!bone.name.toLowerCase().includes("scene")) {
-  //           const jointSphere = BABYLON.MeshBuilder.CreateSphere(
-  //             "jointSphere",
-  //             { diameter: 3 },
-  //             scene
-  //           );
-  //           jointSphere.renderingGroupId = 3;
-  //           jointSphere.attachToBone(bone, meshes[0]);
-
-  //           // manage joint sphere actions
-  //           jointSphere.actionManager = new BABYLON.ActionManager(scene);
-  //           jointSphere.actionManager.registerAction(
-  //             new BABYLON.ExecuteCodeAction(
-  //               BABYLON.ActionManager.OnPickDownTrigger,
-  //               (event) => {
-  //                 setCurrentGizmoTarget(bone.getTransformNode());
-  //               }
-  //             )
-  //           );
-  //           jointSphere.actionManager.registerAction(
-  //             new BABYLON.ExecuteCodeAction(
-  //               BABYLON.ActionManager.OnPointerOverTrigger,
-  //               () => {
-  //                 scene.hoverCursor = "pointer";
-  //               }
-  //             )
-  //           );
-  //           jointSphere.actionManager.registerAction(
-  //             new BABYLON.ExecuteCodeAction(
-  //               BABYLON.ActionManager.OnPointerOutTrigger,
-  //               () => {
-  //                 scene.hoverCursor = "default";
-  //               }
-  //             )
-  //           );
-  //         }
-  //       });
-  //     }
-
-  //     transformNodes.forEach((transformNode) => {
-  //       scene.addTransformNode(transformNode);
-  //     });
-
-  //     // secondary data : geometries, materials, textures
-  //     geometries.forEach((geometry) => {
-  //       scene.addGeometry(geometry);
-  //     });
-  //     materials.forEach((material) => {
-  //       scene.addMaterial(material);
-  //     });
-  //     textures.forEach((texture) => {
-  //       scene.addTexture(texture);
-  //     });
-  //   },
-  //   [renderingCanvas, setCurrentGizmoTarget]
-  // );
-  // ----------------------------------------------------------------------------------------
 
   // when gizmo target or mode changed
   useEffect(() => {
@@ -356,45 +223,333 @@ const useRendering = (
                 gizmoManger.rotationGizmoEnabled &&
                 currentGizmoMode === "rotation"
               ) {
-                const xRotationObservable = gizmoManger.gizmos.rotationGizmo!.xGizmo.dragBehavior.onDragObservable.add(
-                  ({
-                    delta,
-                    dragDistance,
-                    dragPlaneNormal,
-                    dragPlanePoint,
-                  }) => {
-                    // linkedTransformNode.addRotation(delta.x, 0, 0);
+                const lastDragPosition = new BABYLON.Vector3();
+                const amountToRotate = new BABYLON.Quaternion();
+                const tmpMatrix = new BABYLON.Matrix();
+                const xRotationDragStartObservable = gizmoManger.gizmos.rotationGizmo!.xGizmo.dragBehavior.onDragStartObservable.add(
+                  ({ dragPlanePoint, pointerId }) => {
+                    // set drag start point as lastDragPosition
+                    lastDragPosition.copyFrom(dragPlanePoint);
                   }
                 );
-                const yRotationObservable = gizmoManger.gizmos.rotationGizmo!.yGizmo.dragBehavior.onDragObservable.add(
+                const xRotationDragObservable = gizmoManger.gizmos.rotationGizmo!.xGizmo.dragBehavior.onDragObservable.add(
                   ({
                     delta,
-                    dragDistance,
-                    dragPlaneNormal,
                     dragPlanePoint,
+                    dragPlaneNormal,
+                    dragDistance,
+                    pointerId,
                   }) => {
-                    // linkedTransformNode.addRotation(0, delta.y, 0);
+                    // decompose the world matrix of the linkedTransformNode
+                    const nodeScale = new BABYLON.Vector3(1, 1, 1);
+                    const nodeQuaternion = new BABYLON.Quaternion(0, 0, 0, 1);
+                    const nodeTranslation = new BABYLON.Vector3(0, 0, 0);
+                    linkedTransformNode
+                      .getWorldMatrix()
+                      .decompose(nodeScale, nodeQuaternion, nodeTranslation);
+                    const newVector = dragPlanePoint
+                      .subtract(nodeTranslation)
+                      .normalize();
+                    const originalVector = lastDragPosition
+                      .subtract(nodeTranslation)
+                      .normalize();
+                    const cross = BABYLON.Vector3.Cross(
+                      newVector,
+                      originalVector
+                    );
+                    const dot = BABYLON.Vector3.Dot(newVector, originalVector);
+                    let angle = Math.atan2(cross.length(), dot);
+                    const planeNormal = dragPlaneNormal.clone();
+                    const planeNormalTowardsCamera = new BABYLON.Vector3();
+                    const localPlaneNormalTowardsCamera = new BABYLON.Vector3();
+                    planeNormalTowardsCamera.copyFrom(planeNormal);
+                    localPlaneNormalTowardsCamera.copyFrom(planeNormal);
+                    // Flip up vector depending on which side the camera is on
+                    const {
+                      gizmoLayer,
+                    } = gizmoManger.gizmos.rotationGizmo!.xGizmo;
+                    if (gizmoLayer.utilityLayerScene.activeCamera) {
+                      var camVec = gizmoLayer.utilityLayerScene.activeCamera.position.subtract(
+                        nodeTranslation
+                      );
+                      if (
+                        BABYLON.Vector3.Dot(
+                          camVec,
+                          localPlaneNormalTowardsCamera
+                        ) > 0
+                      ) {
+                        planeNormalTowardsCamera.scaleInPlace(-1);
+                        localPlaneNormalTowardsCamera.scaleInPlace(-1);
+                      }
+                    }
+                    var halfCircleSide =
+                      BABYLON.Vector3.Dot(
+                        localPlaneNormalTowardsCamera,
+                        cross
+                      ) > 0.0;
+                    if (halfCircleSide) {
+                      angle = -angle;
+                    }
+                    const quaternionCoefficient = Math.sin(angle / 2);
+                    amountToRotate.set(
+                      planeNormalTowardsCamera.x * quaternionCoefficient,
+                      planeNormalTowardsCamera.y * quaternionCoefficient,
+                      planeNormalTowardsCamera.z * quaternionCoefficient,
+                      Math.cos(angle / 2)
+                    );
+                    if (tmpMatrix.determinant() > 0) {
+                      const tmpVector = new BABYLON.Vector3();
+                      amountToRotate.toEulerAnglesToRef(tmpVector);
+                      BABYLON.Quaternion.RotationYawPitchRollToRef(
+                        tmpVector.y,
+                        -tmpVector.x,
+                        -tmpVector.z,
+                        amountToRotate
+                      );
+                    }
+                    amountToRotate.multiplyToRef(
+                      nodeQuaternion,
+                      nodeQuaternion
+                    );
+                    linkedTransformNode
+                      .getWorldMatrix()
+                      .copyFrom(
+                        BABYLON.Matrix.Compose(
+                          nodeScale,
+                          nodeQuaternion,
+                          nodeTranslation
+                        )
+                      );
+                    linkedTransformNode.addRotation(
+                      amountToRotate.x,
+                      amountToRotate.y,
+                      amountToRotate.z
+                    );
+                    lastDragPosition.copyFrom(dragPlanePoint);
                   }
                 );
-                const zRotationObservable = gizmoManger.gizmos.rotationGizmo!.zGizmo.dragBehavior.onDragObservable.add(
+                const yRotationDragStartObservable = gizmoManger.gizmos.rotationGizmo!.yGizmo.dragBehavior.onDragStartObservable.add(
+                  ({ dragPlanePoint, pointerId }) => {
+                    // set drag start point as lastDragPosition
+                    lastDragPosition.copyFrom(dragPlanePoint);
+                  }
+                );
+                const yRotationDragObservable = gizmoManger.gizmos.rotationGizmo!.yGizmo.dragBehavior.onDragObservable.add(
                   ({
                     delta,
-                    dragDistance,
-                    dragPlaneNormal,
                     dragPlanePoint,
+                    dragPlaneNormal,
+                    dragDistance,
+                    pointerId,
                   }) => {
-                    // linkedTransformNode.addRotation(0, 0, delta.z);
+                    // decompose the world matrix of the linkedTransformNode
+                    const nodeScale = new BABYLON.Vector3(1, 1, 1);
+                    const nodeQuaternion = new BABYLON.Quaternion(0, 0, 0, 1);
+                    const nodeTranslation = new BABYLON.Vector3(0, 0, 0);
+                    linkedTransformNode
+                      .getWorldMatrix()
+                      .decompose(nodeScale, nodeQuaternion, nodeTranslation);
+                    const newVector = dragPlanePoint
+                      .subtract(nodeTranslation)
+                      .normalize();
+                    const originalVector = lastDragPosition
+                      .subtract(nodeTranslation)
+                      .normalize();
+                    const cross = BABYLON.Vector3.Cross(
+                      newVector,
+                      originalVector
+                    );
+                    const dot = BABYLON.Vector3.Dot(newVector, originalVector);
+                    let angle = Math.atan2(cross.length(), dot);
+                    const planeNormal = dragPlaneNormal.clone();
+                    const planeNormalTowardsCamera = new BABYLON.Vector3();
+                    const localPlaneNormalTowardsCamera = new BABYLON.Vector3();
+                    planeNormalTowardsCamera.copyFrom(planeNormal);
+                    localPlaneNormalTowardsCamera.copyFrom(planeNormal);
+                    // Flip up vector depending on which side the camera is on
+                    const {
+                      gizmoLayer,
+                    } = gizmoManger.gizmos.rotationGizmo!.xGizmo;
+                    if (gizmoLayer.utilityLayerScene.activeCamera) {
+                      var camVec = gizmoLayer.utilityLayerScene.activeCamera.position.subtract(
+                        nodeTranslation
+                      );
+                      if (
+                        BABYLON.Vector3.Dot(
+                          camVec,
+                          localPlaneNormalTowardsCamera
+                        ) > 0
+                      ) {
+                        planeNormalTowardsCamera.scaleInPlace(-1);
+                        localPlaneNormalTowardsCamera.scaleInPlace(-1);
+                      }
+                    }
+                    var halfCircleSide =
+                      BABYLON.Vector3.Dot(
+                        localPlaneNormalTowardsCamera,
+                        cross
+                      ) > 0.0;
+                    if (halfCircleSide) {
+                      angle = -angle;
+                    }
+                    const quaternionCoefficient = Math.sin(angle / 2);
+                    amountToRotate.set(
+                      planeNormalTowardsCamera.x * quaternionCoefficient,
+                      planeNormalTowardsCamera.y * quaternionCoefficient,
+                      planeNormalTowardsCamera.z * quaternionCoefficient,
+                      Math.cos(angle / 2)
+                    );
+                    if (tmpMatrix.determinant() > 0) {
+                      const tmpVector = new BABYLON.Vector3();
+                      amountToRotate.toEulerAnglesToRef(tmpVector);
+                      BABYLON.Quaternion.RotationYawPitchRollToRef(
+                        tmpVector.y,
+                        -tmpVector.x,
+                        -tmpVector.z,
+                        amountToRotate
+                      );
+                    }
+                    amountToRotate.multiplyToRef(
+                      nodeQuaternion,
+                      nodeQuaternion
+                    );
+                    linkedTransformNode
+                      .getWorldMatrix()
+                      .copyFrom(
+                        BABYLON.Matrix.Compose(
+                          nodeScale,
+                          nodeQuaternion,
+                          nodeTranslation
+                        )
+                      );
+                    linkedTransformNode.addRotation(
+                      amountToRotate.x,
+                      amountToRotate.y,
+                      amountToRotate.z
+                    );
+                    lastDragPosition.copyFrom(dragPlanePoint);
+                  }
+                );
+                const zRotationDragStartObservable = gizmoManger.gizmos.rotationGizmo!.zGizmo.dragBehavior.onDragStartObservable.add(
+                  ({ dragPlanePoint, pointerId }) => {
+                    // set drag start point as lastDragPosition
+                    lastDragPosition.copyFrom(dragPlanePoint);
+                  }
+                );
+                const zRotationDragObservable = gizmoManger.gizmos.rotationGizmo!.zGizmo.dragBehavior.onDragObservable.add(
+                  ({
+                    delta,
+                    dragPlanePoint,
+                    dragPlaneNormal,
+                    dragDistance,
+                    pointerId,
+                  }) => {
+                    // decompose the world matrix of the linkedTransformNode
+                    const nodeScale = new BABYLON.Vector3(1, 1, 1);
+                    const nodeQuaternion = new BABYLON.Quaternion(0, 0, 0, 1);
+                    const nodeTranslation = new BABYLON.Vector3(0, 0, 0);
+                    linkedTransformNode
+                      .getWorldMatrix()
+                      .decompose(nodeScale, nodeQuaternion, nodeTranslation);
+                    const newVector = dragPlanePoint
+                      .subtract(nodeTranslation)
+                      .normalize();
+                    const originalVector = lastDragPosition
+                      .subtract(nodeTranslation)
+                      .normalize();
+                    const cross = BABYLON.Vector3.Cross(
+                      newVector,
+                      originalVector
+                    );
+                    const dot = BABYLON.Vector3.Dot(newVector, originalVector);
+                    let angle = Math.atan2(cross.length(), dot);
+                    const planeNormal = dragPlaneNormal.clone();
+                    const planeNormalTowardsCamera = new BABYLON.Vector3();
+                    const localPlaneNormalTowardsCamera = new BABYLON.Vector3();
+                    planeNormalTowardsCamera.copyFrom(planeNormal);
+                    localPlaneNormalTowardsCamera.copyFrom(planeNormal);
+                    // Flip up vector depending on which side the camera is on
+                    const {
+                      gizmoLayer,
+                    } = gizmoManger.gizmos.rotationGizmo!.xGizmo;
+                    if (gizmoLayer.utilityLayerScene.activeCamera) {
+                      var camVec = gizmoLayer.utilityLayerScene.activeCamera.position.subtract(
+                        nodeTranslation
+                      );
+                      if (
+                        BABYLON.Vector3.Dot(
+                          camVec,
+                          localPlaneNormalTowardsCamera
+                        ) > 0
+                      ) {
+                        planeNormalTowardsCamera.scaleInPlace(-1);
+                        localPlaneNormalTowardsCamera.scaleInPlace(-1);
+                      }
+                    }
+                    var halfCircleSide =
+                      BABYLON.Vector3.Dot(
+                        localPlaneNormalTowardsCamera,
+                        cross
+                      ) > 0.0;
+                    if (halfCircleSide) {
+                      angle = -angle;
+                    }
+                    const quaternionCoefficient = Math.sin(angle / 2);
+                    amountToRotate.set(
+                      planeNormalTowardsCamera.x * quaternionCoefficient,
+                      planeNormalTowardsCamera.y * quaternionCoefficient,
+                      planeNormalTowardsCamera.z * quaternionCoefficient,
+                      Math.cos(angle / 2)
+                    );
+                    if (tmpMatrix.determinant() > 0) {
+                      const tmpVector = new BABYLON.Vector3();
+                      amountToRotate.toEulerAnglesToRef(tmpVector);
+                      BABYLON.Quaternion.RotationYawPitchRollToRef(
+                        tmpVector.y,
+                        -tmpVector.x,
+                        -tmpVector.z,
+                        amountToRotate
+                      );
+                    }
+                    amountToRotate.multiplyToRef(
+                      nodeQuaternion,
+                      nodeQuaternion
+                    );
+                    linkedTransformNode
+                      .getWorldMatrix()
+                      .copyFrom(
+                        BABYLON.Matrix.Compose(
+                          nodeScale,
+                          nodeQuaternion,
+                          nodeTranslation
+                        )
+                      );
+                    linkedTransformNode.addRotation(
+                      amountToRotate.x,
+                      amountToRotate.y,
+                      amountToRotate.z
+                    );
+                    lastDragPosition.copyFrom(dragPlanePoint);
                   }
                 );
                 return () => {
+                  gizmoManger.gizmos.rotationGizmo!.xGizmo.dragBehavior.onDragStartObservable.remove(
+                    xRotationDragStartObservable
+                  );
                   gizmoManger.gizmos.rotationGizmo!.xGizmo.dragBehavior.onDragObservable.remove(
-                    xRotationObservable
+                    xRotationDragObservable
+                  );
+                  gizmoManger.gizmos.rotationGizmo!.yGizmo.dragBehavior.onDragStartObservable.remove(
+                    yRotationDragStartObservable
                   );
                   gizmoManger.gizmos.rotationGizmo!.yGizmo.dragBehavior.onDragObservable.remove(
-                    yRotationObservable
+                    yRotationDragObservable
+                  );
+                  gizmoManger.gizmos.rotationGizmo!.zGizmo.dragBehavior.onDragStartObservable.remove(
+                    zRotationDragStartObservable
                   );
                   gizmoManger.gizmos.rotationGizmo!.zGizmo.dragBehavior.onDragObservable.remove(
-                    zRotationObservable
+                    zRotationDragObservable
                   );
                 };
               } else if (
