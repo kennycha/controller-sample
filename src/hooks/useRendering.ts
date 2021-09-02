@@ -160,12 +160,7 @@ const useRendering = (
                 currentGizmoMode === "position"
               ) {
                 const xPositionObservable = gizmoManger.gizmos.positionGizmo!.xGizmo.dragBehavior.onDragObservable.add(
-                  ({
-                    delta,
-                    dragDistance,
-                    dragPlaneNormal,
-                    dragPlanePoint,
-                  }) => {
+                  ({ delta }) => {
                     linkedTransformNode.setAbsolutePosition(
                       new BABYLON.Vector3(
                         linkedTransformNode.absolutePosition.x + delta.x,
@@ -176,12 +171,7 @@ const useRendering = (
                   }
                 );
                 const yPositionObservable = gizmoManger.gizmos.positionGizmo!.yGizmo.dragBehavior.onDragObservable.add(
-                  ({
-                    delta,
-                    dragDistance,
-                    dragPlaneNormal,
-                    dragPlanePoint,
-                  }) => {
+                  ({ delta }) => {
                     linkedTransformNode.setAbsolutePosition(
                       new BABYLON.Vector3(
                         linkedTransformNode.absolutePosition.x + delta.x,
@@ -192,12 +182,7 @@ const useRendering = (
                   }
                 );
                 const zPositionObservable = gizmoManger.gizmos.positionGizmo!.zGizmo.dragBehavior.onDragObservable.add(
-                  ({
-                    delta,
-                    dragDistance,
-                    dragPlaneNormal,
-                    dragPlanePoint,
-                  }) => {
+                  ({ delta }) => {
                     linkedTransformNode.setAbsolutePosition(
                       new BABYLON.Vector3(
                         linkedTransformNode.absolutePosition.x + delta.x,
@@ -259,7 +244,7 @@ const useRendering = (
                     );
                     const dot = BABYLON.Vector3.Dot(newVector, originalVector);
                     let angle = Math.atan2(cross.length(), dot);
-                    const planeNormal = dragPlaneNormal.clone();
+                    const planeNormal = new BABYLON.Vector3(1, 0, 0);
                     const planeNormalTowardsCamera = new BABYLON.Vector3();
                     const localPlaneNormalTowardsCamera = new BABYLON.Vector3();
                     planeNormalTowardsCamera.copyFrom(planeNormal);
@@ -361,7 +346,7 @@ const useRendering = (
                     );
                     const dot = BABYLON.Vector3.Dot(newVector, originalVector);
                     let angle = Math.atan2(cross.length(), dot);
-                    const planeNormal = dragPlaneNormal.clone();
+                    const planeNormal = new BABYLON.Vector3(0, 1, 0);
                     const planeNormalTowardsCamera = new BABYLON.Vector3();
                     const localPlaneNormalTowardsCamera = new BABYLON.Vector3();
                     planeNormalTowardsCamera.copyFrom(planeNormal);
@@ -463,7 +448,7 @@ const useRendering = (
                     );
                     const dot = BABYLON.Vector3.Dot(newVector, originalVector);
                     let angle = Math.atan2(cross.length(), dot);
-                    const planeNormal = dragPlaneNormal.clone();
+                    const planeNormal = new BABYLON.Vector3(0, 0, 1);
                     const planeNormalTowardsCamera = new BABYLON.Vector3();
                     const localPlaneNormalTowardsCamera = new BABYLON.Vector3();
                     planeNormalTowardsCamera.copyFrom(planeNormal);
@@ -557,12 +542,7 @@ const useRendering = (
                 currentGizmoMode === "scale"
               ) {
                 const xScaleObservable = gizmoManger.gizmos.scaleGizmo!.xGizmo.dragBehavior.onDragObservable.add(
-                  ({
-                    delta,
-                    dragDistance,
-                    dragPlaneNormal,
-                    dragPlanePoint,
-                  }) => {
+                  ({ delta }) => {
                     linkedTransformNode.scaling = new BABYLON.Vector3(
                       linkedTransformNode.scaling.x + delta.x,
                       linkedTransformNode.scaling.y + delta.y,
@@ -571,12 +551,7 @@ const useRendering = (
                   }
                 );
                 const yScaleObservable = gizmoManger.gizmos.scaleGizmo!.yGizmo.dragBehavior.onDragObservable.add(
-                  ({
-                    delta,
-                    dragDistance,
-                    dragPlaneNormal,
-                    dragPlanePoint,
-                  }) => {
+                  ({ delta }) => {
                     linkedTransformNode.scaling = new BABYLON.Vector3(
                       linkedTransformNode.scaling.x + delta.x,
                       linkedTransformNode.scaling.y + delta.y,
@@ -585,12 +560,7 @@ const useRendering = (
                   }
                 );
                 const zScaleObservable = gizmoManger.gizmos.scaleGizmo!.zGizmo.dragBehavior.onDragObservable.add(
-                  ({
-                    delta,
-                    dragDistance,
-                    dragPlaneNormal,
-                    dragPlanePoint,
-                  }) => {
+                  ({ delta }) => {
                     linkedTransformNode.scaling = new BABYLON.Vector3(
                       linkedTransformNode.scaling.x + delta.x,
                       linkedTransformNode.scaling.y + delta.y,
@@ -615,12 +585,7 @@ const useRendering = (
                   case "position": {
                     gizmoManger.positionGizmoEnabled = true;
                     const xPositionObservable = gizmoManger.gizmos.positionGizmo!.xGizmo.dragBehavior.onDragObservable.add(
-                      ({
-                        delta,
-                        dragDistance,
-                        dragPlaneNormal,
-                        dragPlanePoint,
-                      }) => {
+                      ({ delta }) => {
                         linkedTransformNode.setAbsolutePosition(
                           new BABYLON.Vector3(
                             linkedTransformNode.absolutePosition.x + delta.x,
@@ -631,12 +596,7 @@ const useRendering = (
                       }
                     );
                     const yPositionObservable = gizmoManger.gizmos.positionGizmo!.yGizmo.dragBehavior.onDragObservable.add(
-                      ({
-                        delta,
-                        dragDistance,
-                        dragPlaneNormal,
-                        dragPlanePoint,
-                      }) => {
+                      ({ delta }) => {
                         linkedTransformNode.setAbsolutePosition(
                           new BABYLON.Vector3(
                             linkedTransformNode.absolutePosition.x + delta.x,
@@ -647,12 +607,7 @@ const useRendering = (
                       }
                     );
                     const zPositionObservable = gizmoManger.gizmos.positionGizmo!.zGizmo.dragBehavior.onDragObservable.add(
-                      ({
-                        delta,
-                        dragDistance,
-                        dragPlaneNormal,
-                        dragPlanePoint,
-                      }) => {
+                      ({ delta }) => {
                         linkedTransformNode.setAbsolutePosition(
                           new BABYLON.Vector3(
                             linkedTransformNode.absolutePosition.x + delta.x,
