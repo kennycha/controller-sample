@@ -223,6 +223,14 @@ function App() {
           controller.renderingGroupId = 3;
           // use controller's state for linking it to its corresponding bone
           controller.state = bone.uniqueId.toString();
+          const controllerMaterial = new BABYLON.StandardMaterial(
+            "controllerMaterial",
+            bone.getScene()
+          );
+          controllerMaterial.diffuseColor = BABYLON.Color3.FromHexString(
+            "#52A9FD"
+          );
+          controller.material = controllerMaterial;
 
           if (controllers.length === 0) {
             // set Armature bone as the parent of hips contoller -> for sync the overall position, rotation and scale of the model
