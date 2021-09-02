@@ -926,9 +926,6 @@ const useRendering = (
             break;
           }
           case "Escape": {
-            gizmoManger.positionGizmoEnabled = false;
-            gizmoManger.rotationGizmoEnabled = false;
-            gizmoManger.scaleGizmoEnabled = false;
             gizmoManger.attachToNode(null);
             setCurrentGizmoTarget(null);
             break;
