@@ -828,7 +828,6 @@ const useRendering = (
         };
 
         dispatch(loadModelAssets({ newContainer }));
-        // addAssetsToScene(loadedAssetContainer, scene);
       };
 
       const loadGlbFile = async (file: unknown, scene: BABYLON.Scene) => {
@@ -857,7 +856,6 @@ const useRendering = (
         };
 
         dispatch(loadModelAssets({ newContainer }));
-        // addAssetsToScene(loadedAssetContainer, scene);
       };
 
       if (scene && currentFile) {

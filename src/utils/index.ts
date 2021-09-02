@@ -5,3 +5,4 @@ export { default as getFileExtension } from "./getFileExtension";
 export { default as roundVector3 } from "./roundVector3";
 export { default as roundQuaternion } from "./roundQuaternion";
 export { default as logGizmoTargetProperties } from "./logGizmoTargetProperties";
+export { default as observableCallbacks } from "./observableCallbacks";
