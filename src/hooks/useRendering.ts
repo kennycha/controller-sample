@@ -3,9 +3,17 @@ import * as BABYLON from "@babylonjs/core";
 import "@babylonjs/loaders/glTF";
 import { useDispatch } from "react-redux";
 import { v4 as uuidv4 } from "uuid";
-import { convertFbxToGlb, getFileExtension } from "../utils";
+import {
+  addOutlineToMesh,
+  convertFbxToGlb,
+  getFileExtension,
+  removeOutlineFromMesh,
+} from "../utils";
 import { loadModelAssets } from "../actions/modelAssets";
 import { useSelector } from "../reducers";
+
+const OUTLINE_COLOR = BABYLON.Color3.Red();
+const OUTLINE_WIDTH = 0.3;
 
 const useRendering = (
   currentFile: File | null,
@@ -143,10 +151,30 @@ const useRendering = (
           }
         }
         gizmoManger.attachToNode(currentGizmoTarget);
+
+        const jointSphere = currentGizmoTarget
+          .getScene()
+          .getMeshByName(`jointSphere_${currentGizmoTarget.name}`);
+
+        addOutlineToMesh(
+          jointSphere as BABYLON.Mesh,
+          OUTLINE_COLOR,
+          OUTLINE_WIDTH
+        );
+
+        return () => {
+          removeOutlineFromMesh(jointSphere as BABYLON.Mesh);
+        };
       } else if (currentGizmoTarget.getClassName() === "Mesh") {
         // case gizmo attached to controller
         // apply delta to linked bone
         gizmoManger.attachToMesh(currentGizmoTarget as BABYLON.Mesh);
+
+        addOutlineToMesh(
+          currentGizmoTarget as BABYLON.Mesh,
+          OUTLINE_COLOR,
+          OUTLINE_WIDTH
+        );
 
         if (modelAssets && modelAssets.length > 0) {
           const linkedBone = modelAssets[0].skeleton.bones.find(
@@ -203,6 +231,7 @@ const useRendering = (
                   gizmoManger.gizmos.positionGizmo!.zGizmo.dragBehavior.onDragObservable.remove(
                     zPositionObservable
                   );
+                  removeOutlineFromMesh(currentGizmoTarget as BABYLON.Mesh);
                 };
               } else if (
                 gizmoManger.rotationGizmoEnabled &&
@@ -679,6 +708,7 @@ const useRendering = (
                   gizmoManger.gizmos.rotationGizmo!.zGizmo.dragBehavior.onDragObservable.remove(
                     zRotationDragObservable
                   );
+                  removeOutlineFromMesh(currentGizmoTarget as BABYLON.Mesh);
                 };
               } else if (
                 gizmoManger.scaleGizmoEnabled &&
@@ -722,70 +752,74 @@ const useRendering = (
                   gizmoManger.gizmos.scaleGizmo!.zGizmo.dragBehavior.onDragObservable.remove(
                     zScaleObservable
                   );
+                  removeOutlineFromMesh(currentGizmoTarget as BABYLON.Mesh);
                 };
-              } else {
-                switch (currentGizmoMode) {
-                  case "position": {
-                    gizmoManger.positionGizmoEnabled = true;
-                    const xPositionObservable = gizmoManger.gizmos.positionGizmo!.xGizmo.dragBehavior.onDragObservable.add(
-                      ({ delta }) => {
-                        linkedTransformNode.setAbsolutePosition(
-                          new BABYLON.Vector3(
-                            linkedTransformNode.absolutePosition.x + delta.x,
-                            linkedTransformNode.absolutePosition.y + delta.y,
-                            linkedTransformNode.absolutePosition.z + delta.z
-                          )
-                        );
-                      }
-                    );
-                    const yPositionObservable = gizmoManger.gizmos.positionGizmo!.yGizmo.dragBehavior.onDragObservable.add(
-                      ({ delta }) => {
-                        linkedTransformNode.setAbsolutePosition(
-                          new BABYLON.Vector3(
-                            linkedTransformNode.absolutePosition.x + delta.x,
-                            linkedTransformNode.absolutePosition.y + delta.y,
-                            linkedTransformNode.absolutePosition.z + delta.z
-                          )
-                        );
-                      }
-                    );
-                    const zPositionObservable = gizmoManger.gizmos.positionGizmo!.zGizmo.dragBehavior.onDragObservable.add(
-                      ({ delta }) => {
-                        linkedTransformNode.setAbsolutePosition(
-                          new BABYLON.Vector3(
-                            linkedTransformNode.absolutePosition.x + delta.x,
-                            linkedTransformNode.absolutePosition.y + delta.y,
-                            linkedTransformNode.absolutePosition.z + delta.z
-                          )
-                        );
-                      }
-                    );
-
-                    return () => {
-                      gizmoManger.gizmos.positionGizmo!.xGizmo.dragBehavior.onDragObservable.remove(
-                        xPositionObservable
-                      );
-                      gizmoManger.gizmos.positionGizmo!.yGizmo.dragBehavior.onDragObservable.remove(
-                        yPositionObservable
-                      );
-                      gizmoManger.gizmos.positionGizmo!.zGizmo.dragBehavior.onDragObservable.remove(
-                        zPositionObservable
-                      );
-                    };
-                  }
-                  case "rotation": {
-                    gizmoManger.rotationGizmoEnabled = true;
-                    break;
-                  }
-                  case "scale": {
-                    gizmoManger.scaleGizmoEnabled = true;
-                    break;
-                  }
-                  default: {
-                    break;
-                  }
-                }
               }
+              // } else {
+              //   console.log("else");
+              //   switch (currentGizmoMode) {
+              //     case "position": {
+              //       gizmoManger.positionGizmoEnabled = true;
+              //       const xPositionObservable = gizmoManger.gizmos.positionGizmo!.xGizmo.dragBehavior.onDragObservable.add(
+              //         ({ delta }) => {
+              //           linkedTransformNode.setAbsolutePosition(
+              //             new BABYLON.Vector3(
+              //               linkedTransformNode.absolutePosition.x + delta.x,
+              //               linkedTransformNode.absolutePosition.y + delta.y,
+              //               linkedTransformNode.absolutePosition.z + delta.z
+              //             )
+              //           );
+              //         }
+              //       );
+              //       const yPositionObservable = gizmoManger.gizmos.positionGizmo!.yGizmo.dragBehavior.onDragObservable.add(
+              //         ({ delta }) => {
+              //           linkedTransformNode.setAbsolutePosition(
+              //             new BABYLON.Vector3(
+              //               linkedTransformNode.absolutePosition.x + delta.x,
+              //               linkedTransformNode.absolutePosition.y + delta.y,
+              //               linkedTransformNode.absolutePosition.z + delta.z
+              //             )
+              //           );
+              //         }
+              //       );
+              //       const zPositionObservable = gizmoManger.gizmos.positionGizmo!.zGizmo.dragBehavior.onDragObservable.add(
+              //         ({ delta }) => {
+              //           linkedTransformNode.setAbsolutePosition(
+              //             new BABYLON.Vector3(
+              //               linkedTransformNode.absolutePosition.x + delta.x,
+              //               linkedTransformNode.absolutePosition.y + delta.y,
+              //               linkedTransformNode.absolutePosition.z + delta.z
+              //             )
+              //           );
+              //         }
+              //       );
+
+              //       return () => {
+              //         gizmoManger.gizmos.positionGizmo!.xGizmo.dragBehavior.onDragObservable.remove(
+              //           xPositionObservable
+              //         );
+              //         gizmoManger.gizmos.positionGizmo!.yGizmo.dragBehavior.onDragObservable.remove(
+              //           yPositionObservable
+              //         );
+              //         gizmoManger.gizmos.positionGizmo!.zGizmo.dragBehavior.onDragObservable.remove(
+              //           zPositionObservable
+              //         );
+              //         removeOutlineFromMesh(currentGizmoTarget as BABYLON.Mesh);
+              //       };
+              //     }
+              //     case "rotation": {
+              //       gizmoManger.rotationGizmoEnabled = true;
+              //       break;
+              //     }
+              //     case "scale": {
+              //       gizmoManger.scaleGizmoEnabled = true;
+              //       break;
+              //     }
+              //     default: {
+              //       break;
+              //     }
+              //   }
+              // }
             }
           }
         }

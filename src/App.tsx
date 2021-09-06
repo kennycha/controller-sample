@@ -130,7 +130,7 @@ function App() {
           if (!bone.name.toLowerCase().includes("scene")) {
             // create joint sphere for each bones
             const jointSphere = BABYLON.MeshBuilder.CreateSphere(
-              "jointSphere",
+              `jointSphere_${bone.name}`,
               { diameter: 3 },
               scene
             );
