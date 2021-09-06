@@ -18,9 +18,9 @@ const OUTLINE_WIDTH = 0.3;
 const useRendering = (
   currentFile: File | null,
   renderingCanvas: RefObject<HTMLCanvasElement>,
-  currentGizmoTarget: BABYLON.TransformNode | BABYLON.Mesh | null,
-  setCurrentGizmoTarget: React.Dispatch<
-    React.SetStateAction<BABYLON.TransformNode | BABYLON.Mesh | null>
+  selectedTargets: (BABYLON.TransformNode | BABYLON.Mesh)[],
+  setSelectedTargets: React.Dispatch<
+    React.SetStateAction<(BABYLON.Mesh | BABYLON.TransformNode)[]>
   >
 ) => {
   const [scene, setScene] = useState<BABYLON.Scene | null>(null);
@@ -102,6 +102,22 @@ const useRendering = (
       // set scene actionManager
       innerScene.actionManager = new BABYLON.ActionManager(innerScene);
 
+      // innerScene.onPointerObservable.add((pointerInfo, eventState) => {
+      //   if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERDOWN) {
+      //     if (pointerInfo.pickInfo) {
+      //       const { event, pickInfo } = pointerInfo;
+      //       console.log("pointerEvent: ", event);
+      //       console.log("pickedPoint: ", pickInfo);
+      //     }
+      //   } else if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERUP) {
+      //     if (pointerInfo.pickInfo) {
+      //       const { event, pickInfo } = pointerInfo;
+      //       console.log("pointerEvent: ", event);
+      //       console.log("pickedPoint: ", pickInfo);
+      //     }
+      //   }
+      // });
+
       // set scene observable
       innerScene.onReadyObservable.addOnce((scene) => {
         handleSceneReady(scene);
@@ -125,7 +141,9 @@ const useRendering = (
 
   // when gizmo target or mode changed
   useEffect(() => {
-    if (gizmoManger && currentGizmoTarget) {
+    // when the only target is selected
+    if (gizmoManger && selectedTargets.length === 1) {
+      const currentGizmoTarget = selectedTargets[0];
       // attach gizmo
       if (currentGizmoTarget.getClassName() === "TransformNode") {
         if (gizmoManger.positionGizmoEnabled) {
@@ -824,8 +842,10 @@ const useRendering = (
           }
         }
       }
+    } else if (gizmoManger && selectedTargets.length > 1) {
+      // when multiple targets are selected
     }
-  }, [currentGizmoMode, currentGizmoTarget, gizmoManger, modelAssets]);
+  }, [currentGizmoMode, gizmoManger, modelAssets, selectedTargets]);
 
   // when new file is dropped
   useEffect(() => {
@@ -959,7 +979,7 @@ const useRendering = (
           }
           case "Escape": {
             gizmoManger.attachToNode(null);
-            setCurrentGizmoTarget(null);
+            setSelectedTargets([]);
             break;
           }
           default: {
@@ -974,7 +994,7 @@ const useRendering = (
         document.removeEventListener("keydown", handleKeyDown);
       };
     }
-  }, [gizmoManger, setCurrentGizmoTarget]);
+  }, [gizmoManger, setSelectedTargets]);
 
   return {};
 };

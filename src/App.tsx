@@ -63,9 +63,9 @@ function App() {
     currentAnimationGroup,
     setCurrentAnimationGroup,
   ] = useState<BABYLON.AnimationGroup | null>(null);
-  const [currentGizmoTarget, setCurrentGizmoTarget] = useState<
-    BABYLON.TransformNode | BABYLON.Mesh | null
-  >(null);
+  const [selectedTargets, setSeletedTargets] = useState<
+    (BABYLON.Mesh | BABYLON.TransformNode)[]
+  >([]);
 
   const renderingCanvas1 = useRef<HTMLCanvasElement>(null);
   const renderingCanvas2 = useRef<HTMLCanvasElement>(null);
@@ -77,6 +77,10 @@ function App() {
   useEffect(() => {
     console.log("modelAssets: ", modelAssets);
   }, [modelAssets]);
+
+  useEffect(() => {
+    console.log("selectedTargets: ", selectedTargets);
+  }, [selectedTargets]);
 
   const handleDrop = (files: File[]) => {
     if (files.length > 1) {
@@ -144,7 +148,9 @@ function App() {
               new BABYLON.ExecuteCodeAction(
                 BABYLON.ActionManager.OnPickDownTrigger,
                 (event) => {
-                  setCurrentGizmoTarget(bone.getTransformNode());
+                  setSeletedTargets([
+                    bone.getTransformNode() as BABYLON.TransformNode,
+                  ]);
                 }
               )
             );
@@ -272,7 +278,7 @@ function App() {
             new BABYLON.ExecuteCodeAction(
               BABYLON.ActionManager.OnPickDownTrigger,
               (event) => {
-                setCurrentGizmoTarget(controller);
+                setSeletedTargets([controller]);
               }
             )
           );
@@ -494,6 +500,14 @@ function App() {
     }
   };
 
+  const handleSelectTargets = useCallback(() => {
+    setSeletedTargets([]);
+  }, []);
+
+  const handleLogSelectedTarget = useCallback(() => {
+    console.log("selectedTargets: ", selectedTargets);
+  }, [selectedTargets]);
+
   const { getRootProps } = useDropzone({
     onDrop: handleDrop,
   });
@@ -503,8 +517,8 @@ function App() {
   useRendering(
     currentFile,
     renderingCanvas1,
-    currentGizmoTarget,
-    setCurrentGizmoTarget
+    selectedTargets,
+    setSeletedTargets
   );
   // useRendering(currentFile, renderingCanvas2);
 
@@ -550,6 +564,12 @@ function App() {
           </button>
           <button className="editing-button" onClick={handleStopAnimationGroup}>
             Stop AnimationGroup
+          </button>
+          <button className="editing-button" onClick={handleSelectTargets}>
+            Select Targets
+          </button>
+          <button className="editing-button" onClick={handleLogSelectedTarget}>
+            Log Selected Targets
           </button>
           <input
             type="number"
