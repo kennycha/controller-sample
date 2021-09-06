@@ -306,69 +306,6 @@ function App() {
               transformNodeScaleAnimation,
             ] = transformNode.animations;
 
-            // will delete lines below after checking if the current way (rootController.setParent(armatureBone)) is safe
-            // ---------------------------------------------------------------------------------------------------------
-            // if (controllers.length === 0) {
-            //   // 아래 local들을 world로 바꿔서 controller의 local에 넣으면 될 듯?
-            //   const originalPositionKeys = positionAnimation.getKeys();
-            //   const originalRotationQuaternionKeys = rotationQuaternionAnimation.getKeys();
-            //   // console.log("originalPositionKeys: ", originalPositionKeys);
-            //   // console.log(
-            //   //   "originalRotationQuaternionKeys: ",
-            //   //   originalRotationQuaternionKeys
-            //   // );
-            //   // const firstRotationQuaternion: BABYLON.Quaternion = originalRotationQuaternionKeys[0].value
-            //   //   .clone()
-            //   //   .normalize();
-            //   // const firstRotation = firstRotationQuaternion.toEulerAngles();
-
-            //   // console.log(
-            //   //   "firstRotationQuaternion: ",
-            //   //   roundQuaternion(firstRotationQuaternion, 4)
-            //   // );
-            //   // console.log("firstRotation: ", roundVector3(firstRotation, 4));
-
-            //   const parentBone = bone.getParent();
-            //   if (parentBone) {
-            //     // const parentController = controllers.find((ctrl) => ctrl.state === parentBone.uniqueId.toString())
-            //     const parentWorldMatrix = parentBone.getWorldMatrix().clone();
-            //     const newPositionKeys = originalPositionKeys.map((key) => ({
-            //       ...key,
-            //       value: BABYLON.Vector3.TransformCoordinates(
-            //         key.value,
-            //         parentWorldMatrix
-            //       ),
-            //     }));
-
-            //     // const newRotation = firstRotation.add(
-            //     //   parentBone.getRotation(BABYLON.Space.WORLD)
-            //     // );
-            //     // const newRotationQuaternion = BABYLON.Quaternion.FromEulerAngles(
-            //     //   newRotation.x,
-            //     //   newRotation.y,
-            //     //   newRotation.z
-            //     // );
-            //     // console.log(
-            //     //   "newRotationQuaternion: ",
-            //     //   roundQuaternion(newRotationQuaternion, 4)
-            //     // );
-            //     // console.log("newRotation: ", roundVector3(newRotation, 4));
-
-            //     // 에러 방지용 임시코드
-            //     newPositionAnimation.setKeys(newPositionKeys);
-            //     newRotationQuaternionAnimation.setKeys(
-            //       originalRotationQuaternionKeys
-            //     );
-            //   } else {
-            //     // 에러 방지용 임시코드
-            //     newPositionAnimation.setKeys(originalPositionKeys);
-            //     newRotationQuaternionAnimation.setKeys(
-            //       originalRotationQuaternionKeys
-            //     );
-            //   }
-            // } else {
-            // ---------------------------------------------------------------------------------------------------------
-
             // get transformNode animation's keys and set them to the controller animation's keys
             controllerPositionAnimation.setKeys(
               transformNodePositionAnimation.getKeys()
