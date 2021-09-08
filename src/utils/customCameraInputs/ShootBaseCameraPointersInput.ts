@@ -383,7 +383,6 @@ export abstract class ShootBaseCameraPointersInput
    */
   protected onContextMenu(evt: PointerEvent): void {
     evt.preventDefault();
-    console.log("context");
   }
 
   /**

@@ -56,7 +56,7 @@ const useRendering = (
           scene
         );
         arcRotateCamera.setPosition(new BABYLON.Vector3(0, 3, 5));
-        arcRotateCamera.attachControl(renderingCanvas.current, false, false);
+        arcRotateCamera.attachControl(renderingCanvas.current, false);
         arcRotateCamera.allowUpsideDown = false;
         arcRotateCamera.minZ = 0.1;
         arcRotateCamera.inertia = 0.5;
