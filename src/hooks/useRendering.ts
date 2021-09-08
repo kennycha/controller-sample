@@ -11,6 +11,7 @@ import {
 } from "../utils";
 import { loadModelAssets } from "../actions/modelAssets";
 import { useSelector } from "../reducers";
+import { ShootArcRotateCameraPointersInput } from "../utils/customCameraInputs/ShootArcRotateCameraPointersInput";
 
 const OUTLINE_COLOR = BABYLON.Color3.Red();
 const OUTLINE_WIDTH = 0.3;
@@ -55,7 +56,7 @@ const useRendering = (
           scene
         );
         arcRotateCamera.setPosition(new BABYLON.Vector3(0, 3, 5));
-        arcRotateCamera.attachControl(renderingCanvas.current, false, true);
+        arcRotateCamera.attachControl(renderingCanvas.current, false, false);
         arcRotateCamera.allowUpsideDown = false;
         arcRotateCamera.minZ = 0.1;
         arcRotateCamera.inertia = 0.5;
@@ -67,6 +68,10 @@ const useRendering = (
         arcRotateCamera.pinchPrecision = 50;
         arcRotateCamera.panningInertia = 0.5;
         arcRotateCamera.panningDistanceLimit = 20;
+
+        arcRotateCamera.inputs.remove(arcRotateCamera.inputs.attached.pointers);
+        arcRotateCamera.inputs.add(new ShootArcRotateCameraPointersInput());
+        arcRotateCamera._panningMouseButton = 1; // use middle button for panning
 
         // create hemispheric light
         const hemisphericLight = new BABYLON.HemisphericLight(
