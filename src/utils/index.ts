@@ -7,4 +7,5 @@ export { default as roundQuaternion } from "./roundQuaternion";
 export { default as logGizmoTargetProperties } from "./logGizmoTargetProperties";
 export { default as addOutlineToMesh } from "./addOutlineToMesh";
 export { default as removeOutlineFromMesh } from "./removeOutlineFromMesh";
+export { default as checkIsIncluded } from "./checkIsIncluded";
 export { default as observableCallbacks } from "./observableCallbacks";
