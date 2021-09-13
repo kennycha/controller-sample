@@ -525,6 +525,7 @@ function App() {
   return (
     <Container isSplited={isSplited}>
       <div className="canvas-wrapper">
+        <div id="_dragBox" />
         <canvas
           id="renderingCanvas1"
           ref={renderingCanvas1}
@@ -598,8 +599,6 @@ const Container = styled.div<ContainerProps>`
     width: 100%;
     height: 100%;
     position: relative;
-    display: flex;
-    justify-content: center;
 
     .rendering-canvas {
       height: 100vh;

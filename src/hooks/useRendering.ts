@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 import { v4 as uuidv4 } from "uuid";
 import {
   addOutlineToMesh,
+  checkIsIncluded,
   convertFbxToGlb,
   getFileExtension,
   removeOutlineFromMesh,
@@ -15,6 +16,8 @@ import { ShootArcRotateCameraPointersInput } from "../utils/customCameraInputs/S
 
 const OUTLINE_COLOR = BABYLON.Color3.Red();
 const OUTLINE_WIDTH = 0.3;
+type Nullable<T> = T | null;
+type ScreenXY = { x: number; y: number };
 
 const useRendering = (
   currentFile: File | null,
@@ -41,7 +44,8 @@ const useRendering = (
     const handleSceneReady = (scene: BABYLON.Scene) => {
       if (renderingCanvas.current) {
         if (renderingCanvas.current.id === "renderingCanvas1") {
-          BABYLON.Mesh.CreateGround("ground", 5, 5, 5, scene);
+          const ground = BABYLON.Mesh.CreateGround("ground", 5, 5, 5, scene);
+          ground.isPickable = false;
         } else if (renderingCanvas.current.id === "renderingCanvas2") {
           scene.forceWireframe = true;
         }
@@ -107,22 +111,6 @@ const useRendering = (
       // set scene actionManager
       innerScene.actionManager = new BABYLON.ActionManager(innerScene);
 
-      // innerScene.onPointerObservable.add((pointerInfo, eventState) => {
-      //   if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERDOWN) {
-      //     if (pointerInfo.pickInfo) {
-      //       const { event, pickInfo } = pointerInfo;
-      //       console.log("pointerEvent: ", event);
-      //       console.log("pickedPoint: ", pickInfo);
-      //     }
-      //   } else if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERUP) {
-      //     if (pointerInfo.pickInfo) {
-      //       const { event, pickInfo } = pointerInfo;
-      //       console.log("pointerEvent: ", event);
-      //       console.log("pickedPoint: ", pickInfo);
-      //     }
-      //   }
-      // });
-
       // set scene observable
       innerScene.onReadyObservable.addOnce((scene) => {
         handleSceneReady(scene);
@@ -143,6 +131,118 @@ const useRendering = (
       };
     }
   }, [renderingCanvas]);
+
+  // dragBox setting for loadedAssets updated
+  useEffect(() => {
+    if (scene && scene.isReady()) {
+      let startPointerPosition: Nullable<ScreenXY> = null;
+      const dragBox = document.querySelector("#_dragBox") as HTMLDivElement;
+      const dragBoxDefaultStyle =
+        "background-color: gray; position: absolute; opacity: 0.3; pointer-events: none;";
+      dragBox.setAttribute("style", dragBoxDefaultStyle);
+
+      const dragBoxObserver = scene.onPointerObservable.add(
+        (pointerInfo, eventState) => {
+          // pointer down event catched
+          if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERDOWN) {
+            if (
+              pointerInfo?.event.button === 0 && // check if it it left click
+              !pointerInfo.pickInfo!.hit // pickInfo always exist with pointer event
+            ) {
+              // set start point of the dragBox
+              startPointerPosition = {
+                x: scene.pointerX,
+                y: scene.pointerY,
+              };
+              // console.log("startPointerPosition:", startPointerPosition);
+            }
+          } else if (
+            pointerInfo.type === BABYLON.PointerEventTypes.POINTERMOVE
+          ) {
+            if (startPointerPosition) {
+              const currentPointerPosition: Nullable<ScreenXY> = {
+                x: scene.pointerX,
+                y: scene.pointerY,
+              };
+
+              const minX = Math.min(
+                startPointerPosition.x,
+                currentPointerPosition.x
+              );
+              const minY = Math.min(
+                startPointerPosition.y,
+                currentPointerPosition.y
+              );
+              const maxX = Math.max(
+                startPointerPosition.x,
+                currentPointerPosition.x
+              );
+              const maxY = Math.max(
+                startPointerPosition.y,
+                currentPointerPosition.y
+              );
+
+              dragBox.setAttribute(
+                "style",
+                `${dragBoxDefaultStyle} left: ${minX}px; top: ${minY}px; width: ${
+                  maxX - minX
+                }px; height: ${maxY - minY}px;`
+              );
+
+              // console.log("startPointerPosition:", startPointerPosition);
+              // console.log("currentPointerPosition:", currentPointerPosition);
+            }
+          } else if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERUP) {
+            if (startPointerPosition) {
+              if (
+                modelAssets[0] &&
+                modelAssets[0].skeleton &&
+                modelAssets[0].controllers
+              ) {
+                const { skeleton, controllers } = modelAssets[0];
+
+                const endPointerPosition: Nullable<ScreenXY> = {
+                  x: scene.pointerX,
+                  y: scene.pointerY,
+                };
+
+                const selectedTransformNodes = skeleton.bones
+                  .map((bone) => bone.getTransformNode())
+                  .filter((transformNode) =>
+                    checkIsIncluded(
+                      startPointerPosition as ScreenXY,
+                      endPointerPosition,
+                      transformNode!.getAbsolutePosition(),
+                      scene
+                    )
+                  ) as BABYLON.TransformNode[];
+                const selectedControllers = controllers.filter((controller) =>
+                  checkIsIncluded(
+                    startPointerPosition as ScreenXY,
+                    endPointerPosition,
+                    controller.getAbsolutePosition(),
+                    scene
+                  )
+                );
+
+                setSelectedTargets([
+                  ...selectedTransformNodes,
+                  ...selectedControllers,
+                ]);
+              }
+
+              // initialize style and start point
+              startPointerPosition = null;
+              dragBox.setAttribute("style", dragBoxDefaultStyle);
+            }
+          }
+        }
+      );
+      return () => {
+        scene.onPointerObservable.remove(dragBoxObserver);
+      };
+    }
+  }, [modelAssets, scene, setSelectedTargets]);
 
   // when gizmo target or mode changed
   useEffect(() => {
