@@ -63,12 +63,12 @@ function App() {
     currentAnimationGroup,
     setCurrentAnimationGroup,
   ] = useState<BABYLON.AnimationGroup | null>(null);
-  const [selectedTargets, setSeletedTargets] = useState<
+  const [selectedTargets, setSelectedTargets] = useState<
     (BABYLON.Mesh | BABYLON.TransformNode)[]
   >([]);
 
   const renderingCanvas1 = useRef<HTMLCanvasElement>(null);
-  const renderingCanvas2 = useRef<HTMLCanvasElement>(null);
+  // const renderingCanvas2 = useRef<HTMLCanvasElement>(null);
 
   const dispatch = useDispatch();
 
@@ -148,7 +148,7 @@ function App() {
               new BABYLON.ExecuteCodeAction(
                 BABYLON.ActionManager.OnPickDownTrigger,
                 (event) => {
-                  setSeletedTargets([
+                  setSelectedTargets([
                     bone.getTransformNode() as BABYLON.TransformNode,
                   ]);
                 }
@@ -278,7 +278,7 @@ function App() {
             new BABYLON.ExecuteCodeAction(
               BABYLON.ActionManager.OnPickDownTrigger,
               (event) => {
-                setSeletedTargets([controller]);
+                setSelectedTargets([controller]);
               }
             )
           );
@@ -501,7 +501,7 @@ function App() {
   };
 
   const handleSelectTargets = useCallback(() => {
-    setSeletedTargets([]);
+    setSelectedTargets([]);
   }, []);
 
   const handleLogSelectedTarget = useCallback(() => {
@@ -518,7 +518,7 @@ function App() {
     currentFile,
     renderingCanvas1,
     selectedTargets,
-    setSeletedTargets
+    setSelectedTargets
   );
   // useRendering(currentFile, renderingCanvas2);
 
@@ -528,13 +528,13 @@ function App() {
         <canvas
           id="renderingCanvas1"
           ref={renderingCanvas1}
-          className="renderingCanvas"
+          className="rendering-canvas"
         ></canvas>
-        <canvas
+        {/* <canvas
           id="renderingCanvas2"
           ref={renderingCanvas2}
-          className="renderingCanvas"
-        ></canvas>
+          className="rendering-canvas"
+        ></canvas> */}
       </div>
       <div className="div-wrapper">
         <div {...getRootProps()} className="droping-div">
@@ -597,10 +597,11 @@ const Container = styled.div<ContainerProps>`
   .canvas-wrapper {
     width: 100%;
     height: 100%;
+    position: relative;
     display: flex;
     justify-content: center;
 
-    .renderingCanvas {
+    .rendering-canvas {
       height: 100vh;
       border: 1px solid black;
     }
