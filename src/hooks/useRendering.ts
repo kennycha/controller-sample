@@ -144,96 +144,100 @@ const useRendering = (
       const dragBoxObserver = scene.onPointerObservable.add(
         (pointerInfo, eventState) => {
           // pointer down event catched
-          if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERDOWN) {
-            if (
-              pointerInfo?.event.button === 0 && // check if it it left click
-              !pointerInfo.pickInfo!.hit // pickInfo always exist with pointer event
-            ) {
-              // set start point of the dragBox
-              startPointerPosition = {
-                x: scene.pointerX,
-                y: scene.pointerY,
-              };
-              // console.log("startPointerPosition:", startPointerPosition);
-            }
-          } else if (
-            pointerInfo.type === BABYLON.PointerEventTypes.POINTERMOVE
-          ) {
-            if (startPointerPosition) {
-              const currentPointerPosition: Nullable<ScreenXY> = {
-                x: scene.pointerX,
-                y: scene.pointerY,
-              };
-
-              const minX = Math.min(
-                startPointerPosition.x,
-                currentPointerPosition.x
-              );
-              const minY = Math.min(
-                startPointerPosition.y,
-                currentPointerPosition.y
-              );
-              const maxX = Math.max(
-                startPointerPosition.x,
-                currentPointerPosition.x
-              );
-              const maxY = Math.max(
-                startPointerPosition.y,
-                currentPointerPosition.y
-              );
-
-              dragBox.setAttribute(
-                "style",
-                `${dragBoxDefaultStyle} left: ${minX}px; top: ${minY}px; width: ${
-                  maxX - minX
-                }px; height: ${maxY - minY}px;`
-              );
-
-              // console.log("startPointerPosition:", startPointerPosition);
-              // console.log("currentPointerPosition:", currentPointerPosition);
-            }
-          } else if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERUP) {
-            if (startPointerPosition) {
+          switch (pointerInfo.type) {
+            case BABYLON.PointerEventTypes.POINTERDOWN: {
               if (
-                modelAssets[0] &&
-                modelAssets[0].skeleton &&
-                modelAssets[0].controllers
+                pointerInfo?.event.button === 0 && // check if it it left click
+                !pointerInfo.pickInfo!.hit // pickInfo always exist with pointer event
               ) {
-                const { skeleton, controllers } = modelAssets[0];
-
-                const endPointerPosition: Nullable<ScreenXY> = {
+                // set start point of the dragBox
+                startPointerPosition = {
+                  x: scene.pointerX,
+                  y: scene.pointerY,
+                };
+              }
+              break;
+            }
+            case BABYLON.PointerEventTypes.POINTERMOVE: {
+              if (startPointerPosition) {
+                const currentPointerPosition: Nullable<ScreenXY> = {
                   x: scene.pointerX,
                   y: scene.pointerY,
                 };
 
-                const selectedTransformNodes = skeleton.bones
-                  .map((bone) => bone.getTransformNode())
-                  .filter((transformNode) =>
+                const minX = Math.min(
+                  startPointerPosition.x,
+                  currentPointerPosition.x
+                );
+                const minY = Math.min(
+                  startPointerPosition.y,
+                  currentPointerPosition.y
+                );
+                const maxX = Math.max(
+                  startPointerPosition.x,
+                  currentPointerPosition.x
+                );
+                const maxY = Math.max(
+                  startPointerPosition.y,
+                  currentPointerPosition.y
+                );
+
+                dragBox.setAttribute(
+                  "style",
+                  `${dragBoxDefaultStyle} left: ${minX}px; top: ${minY}px; width: ${
+                    maxX - minX
+                  }px; height: ${maxY - minY}px;`
+                );
+              }
+              break;
+            }
+            case BABYLON.PointerEventTypes.POINTERUP: {
+              if (startPointerPosition) {
+                if (
+                  modelAssets[0] &&
+                  modelAssets[0].skeleton &&
+                  modelAssets[0].controllers
+                ) {
+                  const { skeleton, controllers } = modelAssets[0];
+
+                  const endPointerPosition: Nullable<ScreenXY> = {
+                    x: scene.pointerX,
+                    y: scene.pointerY,
+                  };
+
+                  const selectedTransformNodes = skeleton.bones
+                    .map((bone) => bone.getTransformNode())
+                    .filter((transformNode) =>
+                      checkIsIncluded(
+                        startPointerPosition as ScreenXY,
+                        endPointerPosition,
+                        transformNode!.getAbsolutePosition(),
+                        scene
+                      )
+                    ) as BABYLON.TransformNode[];
+                  const selectedControllers = controllers.filter((controller) =>
                     checkIsIncluded(
                       startPointerPosition as ScreenXY,
                       endPointerPosition,
-                      transformNode!.getAbsolutePosition(),
+                      controller.getAbsolutePosition(),
                       scene
                     )
-                  ) as BABYLON.TransformNode[];
-                const selectedControllers = controllers.filter((controller) =>
-                  checkIsIncluded(
-                    startPointerPosition as ScreenXY,
-                    endPointerPosition,
-                    controller.getAbsolutePosition(),
-                    scene
-                  )
-                );
+                  );
 
-                setSelectedTargets([
-                  ...selectedTransformNodes,
-                  ...selectedControllers,
-                ]);
+                  setSelectedTargets([
+                    ...selectedTransformNodes,
+                    ...selectedControllers,
+                  ]);
+                }
+
+                // initialize style and start point
+                startPointerPosition = null;
+                dragBox.setAttribute("style", dragBoxDefaultStyle);
               }
-
-              // initialize style and start point
-              startPointerPosition = null;
-              dragBox.setAttribute("style", dragBoxDefaultStyle);
+              break;
+            }
+            default: {
+              break;
             }
           }
         }
