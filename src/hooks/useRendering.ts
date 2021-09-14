@@ -44,7 +44,14 @@ const useRendering = (
     const handleSceneReady = (scene: BABYLON.Scene) => {
       if (renderingCanvas.current) {
         if (renderingCanvas.current.id === "renderingCanvas1") {
-          const ground = BABYLON.Mesh.CreateGround("ground", 5, 5, 5, scene);
+          const ground = BABYLON.Mesh.CreateGround("ground", 20, 20, 20, scene);
+          const groundMaterial = new BABYLON.StandardMaterial(
+            "groundMaterial",
+            scene
+          );
+          groundMaterial.emissiveColor = BABYLON.Color3.Black();
+          groundMaterial.alpha = 0.2;
+          ground.material = groundMaterial;
           ground.isPickable = false;
         } else if (renderingCanvas.current.id === "renderingCanvas2") {
           scene.forceWireframe = true;
@@ -107,6 +114,9 @@ const useRendering = (
       // create scene
       const innerScene = new BABYLON.Scene(engine);
       innerScene.useRightHandedSystem = true;
+      innerScene.clearColor = BABYLON.Color4.FromColor3(
+        BABYLON.Color3.FromHexString("#242424")
+      );
 
       // set scene actionManager
       innerScene.actionManager = new BABYLON.ActionManager(innerScene);
