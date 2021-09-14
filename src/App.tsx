@@ -221,7 +221,7 @@ function App() {
           // create controller
           const controller = BABYLON.MeshBuilder.CreateTorus(
             `${bone.name}_Ctrl`,
-            { diameter: 30, thickness: 1 },
+            { diameter: 30, thickness: 0.2, tessellation: 64 },
             bone.getScene()
           );
           // initial position setting
@@ -233,9 +233,10 @@ function App() {
             "controllerMaterial",
             bone.getScene()
           );
-          controllerMaterial.diffuseColor = BABYLON.Color3.FromHexString(
-            "#52A9FD"
+          controllerMaterial.emissiveColor = BABYLON.Color3.FromHexString(
+            "#0763b9"
           );
+          controllerMaterial.disableLighting = true;
           controller.material = controllerMaterial;
 
           if (controllers.length === 0) {
