@@ -12,7 +12,7 @@ import { useDispatch } from "react-redux";
 import { useRendering } from "./hooks";
 import { useSelector } from "./reducers";
 import { updateModelAssets } from "./actions/modelAssets";
-import { roundQuaternion, roundVector3 } from "./utils";
+import { downloadSkeletonAsJson, roundQuaternion, roundVector3 } from "./utils";
 
 const TARGET_BONE_NAMES = [
   "mixamorig:Hips",
@@ -508,6 +508,13 @@ function App() {
     console.log("selectedTargets: ", selectedTargets);
   }, [selectedTargets]);
 
+  const handleDownloadBones = useCallback(() => {
+    if (modelAssets && modelAssets[0]) {
+      const { skeleton, meshes } = modelAssets[0];
+      downloadSkeletonAsJson(skeleton, meshes[0].name);
+    }
+  }, [modelAssets]);
+
   const { getRootProps } = useDropzone({
     onDrop: handleDrop,
   });
@@ -571,6 +578,9 @@ function App() {
           </button>
           <button className="editing-button" onClick={handleLogSelectedTarget}>
             Log Selected Targets
+          </button>
+          <button className="editing-button" onClick={handleDownloadBones}>
+            Download Bones
           </button>
           <input
             type="number"
