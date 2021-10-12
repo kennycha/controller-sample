@@ -15,30 +15,30 @@ import { updateModelAssets } from "./actions/modelAssets";
 import { downloadSkeletonAsJson, roundQuaternion, roundVector3 } from "./utils";
 
 const TARGET_BONE_NAMES = [
-  "mixamorig:Hips",
-  "mixamorig:LeftUpLeg",
-  "mixamorig:RightUpLeg",
-  "mixamorig:Spine",
-  "mixamorig:LeftLeg",
-  "mixamorig:RightLeg",
-  "mixamorig:Spine1",
-  "mixamorig:LeftFoot",
-  "mixamorig:RightFoot",
-  "mixamorig:Spine2",
-  "mixamorig:LeftToeBase",
-  "mixamorig:RightToeBase",
-  "mixamorig:Neck",
-  "mixamorig:LeftShoulder",
-  "mixamorig:RightShoulder",
-  "mixamorig:Head",
-  "mixamorig:LeftArm",
-  "mixamorig:RightArm",
-  "mixamorig:LeftForeArm",
-  "mixamorig:RightForeArm",
-  "mixamorig:LeftHand",
-  "mixamorig:RightHand",
-  "mixamorig:LeftHandIndex1",
-  "mixamorig:RightHandIndex1",
+  "mixamorig:Hips", // 1
+  "mixamorig:LeftUpLeg", // 56
+  "mixamorig:RightUpLeg", // 61
+  "mixamorig:Spine", // 2
+  "mixamorig:LeftLeg", // 57
+  "mixamorig:RightLeg", // 62
+  "mixamorig:Spine1", // 3
+  "mixamorig:LeftFoot", // 58
+  "mixamorig:RightFoot", // 63
+  "mixamorig:Spine2", // 4
+  "mixamorig:LeftToeBase", // 59
+  "mixamorig:RightToeBase", // 64
+  "mixamorig:Neck", // 5
+  "mixamorig:LeftShoulder", // 8
+  "mixamorig:RightShoulder", // 32
+  "mixamorig:Head", // 6
+  "mixamorig:LeftArm", // 9
+  "mixamorig:RightArm", // 33
+  "mixamorig:LeftForeArm", // 10
+  "mixamorig:RightForeArm", // 34
+  "mixamorig:LeftHand", // 11
+  "mixamorig:RightHand", // 35
+  "mixamorig:LeftHandIndex1", // 16
+  "mixamorig:RightHandIndex1", // 40
 ];
 
 const SKELETON_VIEWER_OPTION = {
